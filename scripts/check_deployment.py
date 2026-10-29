@@ -8,10 +8,15 @@ import argparse
 from datetime import datetime, timezone
 from http.cookiejar import CookieJar
 import json
+from pathlib import Path
+import sys
 import time
 from urllib.error import HTTPError
 from urllib.parse import urlsplit
 from urllib.request import HTTPCookieProcessor, Request, build_opener
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from app import __version__
 
 
 def main():
@@ -52,7 +57,7 @@ def main():
     health = request("/api/health")
     assert health["ok"] and health["qloo_agent_enabled"] and not health["live_agent_enabled"]
     assert b"Receipt" in request("/")
-    assert request("/openapi.json")["info"]["version"] == "0.5.1"
+    assert request("/openapi.json")["info"]["version"] == __version__, "Hosted version differs from this checkout"
     session = next(cookie for cookie in cookies if cookie.name == "receipt_session")
     assert session.secure and "HttpOnly" in session._rest and session._rest.get("SameSite") == "strict"
     for path in ("/.env", "/.git/config", "/data/live-workflows.json"):

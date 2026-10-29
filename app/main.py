@@ -22,9 +22,10 @@ from .guard import CapacityError, RequestGuard, work_slot
 from .jobs import JOBS, QueueFull
 from .runtime import WorkTimeout, work_budget
 from .scope import Scope, Venue
+from . import __version__
 
 WEB = Path(__file__).resolve().parent.parent / "web"
-app = FastAPI(title="Receipt", description="Cultural quality checks for recommendation agents.", version="0.6.0")
+app = FastAPI(title="Receipt", description="Cultural quality checks for recommendation agents.", version=__version__)
 app.mount("/static", StaticFiles(directory=WEB), name="static")
 app.add_middleware(RequestGuard)
 
