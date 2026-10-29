@@ -78,6 +78,18 @@ Verified-only requires a baseline and therefore holds results when it is absent.
   ratings-agent first drafts were captured privately; they are not LLM outputs.
 - Internal audit/planning documents are now local-only and removed from reachable
   public branch history. Starter tools/replay/page/playbook leftovers were removed.
+- Hosted v0.5.0 Chrome checks pass the same live workflows at 1440px and 390px.
+  A fresh anonymous public clone contains no internal documents in files/history.
+- The release's separate-network check passes actual Qloo flows, complete panel
+  evidence, frozen re-audit, confirmation, a two-round ratings agent and batch.
+  Fresh install/pip check and 106 tests pass (one upstream TestClient warning).
+  [v0.5.0 release verification](https://github.com/woooj02/receipt/actions/runs/40926859918).
+- Upload preflight exposed a venv symlink escaping the directory-only exclusion.
+  The upload stopped before restart; this app's environment was rebuilt. The
+  corrected rule preserves both venv directories/symlinks and excludes env variants.
+  An actual rsync fixture regression, redeploy and hosted workflow checks pass.
+- A new private 2:10 recording uses actual hosted Qloo evidence and four actual
+  ratings-agent control outputs. It is not an LLM study and has not been uploaded.
 - scripted: synthetic catalog and deterministic workflow example.
 - live: optional model adapter; requires a separate key, model and spending permission.
 
@@ -107,4 +119,3 @@ Verified-only requires a baseline and therefore holds results when it is absent.
 A real LLM capture study and preference/customer validation are not completed.
 Final Devpost submission has not been performed and needs separate approval.
 Docker image build verification remains unavailable because local socket access is denied.
-The application has not been submitted to Devpost.
