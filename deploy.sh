@@ -46,7 +46,8 @@ fi
 echo "==> upload"
 "${SSH[@]}" "$SERVER" mkdir -p "$REMOTE"
 rsync -az --delete -e "ssh -i $KEY" \
-  --exclude venv/ --exclude .env --exclude __pycache__/ --exclude .pytest_cache/ \
+  --exclude venv --exclude .venv --include '/.env.example' --exclude '/.env*' \
+  --exclude __pycache__/ --exclude .pytest_cache/ \
   --exclude .git/ --exclude 'data/' --exclude event-brief.md \
   --exclude 'submission/video/' --exclude 'submission/VOICEOVER.md' \
   --exclude project.md --exclude PROJECT_AUDIT.md --exclude PREKEY_HANDOFF.md \
