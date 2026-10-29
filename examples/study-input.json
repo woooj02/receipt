@@ -1,0 +1,17 @@
+{
+  "city": "Denver, Colorado",
+  "goal": "Suggest three restaurants for dinner for a visitor with these tastes. Use official place names. Opening hours are unknown.",
+  "constraints": {"category": "restaurant", "venue": null},
+  "profiles": [
+    {"profile_id": "rap-cinema", "anchors": ["Kendrick Lamar", "Everything Everywhere All at Once"]},
+    {"profile_id": "pop-literature", "anchors": ["Taylor Swift", "Little Women"]},
+    {"profile_id": "jazz-cinema", "anchors": ["Miles Davis", "The Royal Tenenbaums"]},
+    {"profile_id": "soul-television", "anchors": ["Beyoncé", "The Bear"]},
+    {"profile_id": "alternative-scifi", "anchors": ["Radiohead", "Arrival"]},
+    {"profile_id": "latin-animation", "anchors": ["Bad Bunny", "Spirited Away"]},
+    {"profile_id": "jazz-literature", "anchors": ["Nina Simone", "Beloved"]},
+    {"profile_id": "electronic-cinema", "anchors": ["Daft Punk", "Tron"]},
+    {"profile_id": "country-literature", "anchors": ["Dolly Parton", "Pride and Prejudice"]},
+    {"profile_id": "experimental-scifi", "anchors": ["Björk", "Dune"]}
+  ]
+}

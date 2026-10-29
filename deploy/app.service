@@ -6,7 +6,7 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=__REMOTE__
-# Optional (leading dash): with no .env the app runs on the mock engine.
+# Without .env the app exposes its explicitly synthetic demonstration.
 EnvironmentFile=-__REMOTE__/.env
 ExecStart=__REMOTE__/venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port __PORT__ --workers 1
 Restart=always

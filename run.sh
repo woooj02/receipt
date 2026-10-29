@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# ./run.sh            serve on http://127.0.0.1:${PORT:-8100} with auto-reload
-# ./run.sh test       run the test suite (offline, mock engine)
+# ./run.sh            serve on http://127.0.0.1:${PORT:-8132} with auto-reload
+# ./run.sh test       run the offline regression suite
 # ./run.sh setup      create the venv and install everything
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -20,11 +20,19 @@ case "${1:-serve}" in
     ;;
   serve)
     [ -x "$PY" ] || { echo "run ./run.sh setup first"; exit 1; }
-    exec "$PY" -m uvicorn app.main:app --reload --host 127.0.0.1 --port "${PORT:-8100}"
+    exec "$PY" -m uvicorn app.main:app --reload --host 127.0.0.1 --port "${PORT:-8132}"
     ;;
   test)
     shift
     PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 exec "$PY" -m pytest -q "$@"
     ;;
-  *) echo "usage: ./run.sh [serve|test|setup]"; exit 1 ;;
+  probe)
+    shift
+    exec "$PY" scripts/live_probe.py "$@"
+    ;;
+  capture)
+    shift
+    exec "$PY" scripts/capture_study.py "$@"
+    ;;
+  *) echo "usage: ./run.sh [serve|test|setup|probe|capture]"; exit 1 ;;
 esac

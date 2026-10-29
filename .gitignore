@@ -1,5 +1,10 @@
 venv/
 .env
+.env.*
+!.env.example
+.venv/
 __pycache__/
 .pytest_cache/
 data/
+submission/video/
+submission/VOICEOVER.md

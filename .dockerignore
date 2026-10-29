@@ -1,0 +1,14 @@
+.git
+.env
+.env.*
+venv
+.venv
+__pycache__
+**/__pycache__
+.pytest_cache
+data
+event-brief.md
+tests
+scripts
+submission/video
+submission/VOICEOVER.md

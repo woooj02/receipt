@@ -31,6 +31,9 @@ case "${1:-}" in
     echo "removed $UNIT (files left in $REMOTE)"; exit 0 ;;
 esac
 
+[[ "$NAME" =~ ^[a-z][a-z0-9-]{1,30}$ ]] || { echo "invalid project name" >&2; exit 1; }
+[[ "$PORT" =~ ^[0-9]+$ ]] && (( PORT >= 1024 && PORT <= 65535 )) || { echo "invalid port" >&2; exit 1; }
+[[ "$DOMAIN" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]+$ ]] || { echo "invalid domain" >&2; exit 1; }
 # Refuse to clash with another app on the box.
 if "${SSH[@]}" "$SERVER" "ss -ltnp | grep -q ':$PORT ' && ! systemctl is-active -q $UNIT"; then
   echo "port $PORT is taken by something else on the box; change PORT in deploy.env" >&2; exit 1
@@ -44,12 +47,12 @@ echo "==> upload"
 "${SSH[@]}" "$SERVER" mkdir -p "$REMOTE"
 rsync -az --delete -e "ssh -i $KEY" \
   --exclude venv/ --exclude .env --exclude __pycache__/ --exclude .pytest_cache/ \
-  --exclude .git/ --exclude 'data/' ./ "$SERVER:$REMOTE/"
-# Replays are uploaded separately and never deleted, so a recording made on
-# the box survives redeploys.
-[ -d data/replays ] && rsync -az -e "ssh -i $KEY" data/replays/ "$SERVER:$REMOTE/data/replays/"
+  --exclude .git/ --exclude 'data/' --exclude event-brief.md \
+  --exclude 'submission/video/' --exclude 'submission/VOICEOVER.md' ./ "$SERVER:$REMOTE/"
 if [ "${1:-}" = "--env" ] && [ -f .env ]; then
-  scp -q -i "$KEY" .env "$SERVER:$REMOTE/.env"; echo "    copied .env"
+  scp -q -i "$KEY" .env "$SERVER:$REMOTE/.env"
+  "${SSH[@]}" "$SERVER" chmod 600 "$REMOTE/.env"
+  echo "    copied .env"
 fi
 
 echo "==> server"
@@ -75,7 +78,7 @@ if [ ! -f "/etc/nginx/sites-available/$UNIT" ]; then
   nginx -t -q && systemctl reload nginx
   if command -v certbot >/dev/null; then
     certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email --redirect -q \
-      || echo "    certbot failed; site is on plain http for now"
+      || { echo "HTTPS provisioning failed; deployment is not verified" >&2; exit 1; }
   fi
 fi
 
@@ -83,6 +86,8 @@ for _ in $(seq 20); do
   curl -fsS "http://127.0.0.1:$PORT/api/health" >/dev/null 2>&1 && break; sleep 0.5
 done
 curl -fsS "http://127.0.0.1:$PORT/api/health" || { journalctl -u "$UNIT" -n 30 --no-pager; exit 1; }
+curl -fsS --max-time 20 "https://$DOMAIN/api/health" >/dev/null \
+  || { echo "External HTTPS health check failed" >&2; exit 1; }
 echo
 REMOTE_SCRIPT
 

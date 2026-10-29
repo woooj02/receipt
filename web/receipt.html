@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Receipt is cultural quality control for recommendation agents.">
+<title>Receipt — cultural quality control for agents</title>
+<link rel="stylesheet" href="/static/workbench.css">
+<style>
+  :root {
+    --cream: #f8f7f2;
+    --paper: #fffefa;
+    --ink: #1d201c;
+    --muted: #636961;
+    --line: #dedfd7;
+    --forest: #163c30;
+    --forest-2: #0d2c23;
+    --lime: #c8f47b;
+    --orange: #ef6c3b;
+    --yellow: #f5c94e;
+    --red: #cb4242;
+    --blue: #5780f1;
+    --radius: 18px;
+    --shadow: 0 18px 40px rgba(19, 39, 31, .08);
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--cream); }
+  body {
+    margin: 0; color: var(--ink); background:
+      radial-gradient(circle at 85% 0%, rgba(200,244,123,.4), transparent 24rem),
+      radial-gradient(circle at 0 38rem, rgba(239,108,59,.08), transparent 25rem), var(--cream);
+    font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    min-height: 100vh;
+  }
+  button, input, textarea { font: inherit; }
+  button { cursor: pointer; }
+  .shell { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 24px 0; }
+  .brand { display: flex; align-items: center; gap: 11px; text-decoration: none; color: var(--ink); font-weight: 800; letter-spacing: -.04em; font-size: 22px; }
+  .mark { display: grid; place-items: center; width: 28px; height: 32px; color: var(--lime); background: var(--forest); clip-path: polygon(0 0,100% 0,100% 72%,50% 100%,0 72%); font-size: 15px; }
+  .top-meta { display: flex; gap: 9px; align-items: center; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 5px 9px; color: var(--muted); background: rgba(255,254,250,.7); font-size: 12px; font-weight: 650; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--orange); }
+  .dot.live { background: #31b678; box-shadow: 0 0 0 3px rgba(49,182,120,.13); }
+  .hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 54px; align-items: center; padding: 66px 0 56px; }
+  .eyebrow { margin: 0 0 14px; color: var(--forest); font-size: 11px; font-weight: 800; letter-spacing: .12em; }
+  h1, h2, h3, p { margin-top: 0; }
+  h1 { max-width: 690px; margin-bottom: 20px; font: 700 clamp(40px, 6vw, 72px)/.96 Georgia, "Times New Roman", serif; letter-spacing: -.065em; overflow-wrap: anywhere; }
+  .hero h1 em { color: var(--forest); font-style: italic; font-weight: 500; }
+  .lede { max-width: 570px; color: var(--muted); font-size: 18px; line-height: 1.55; }
+  .proof { display: flex; gap: 12px; margin-top: 25px; }
+  .proof span { border-left: 2px solid var(--lime); padding-left: 10px; color: var(--muted); font-size: 13px; }
+  .workflow { position: relative; min-height: 290px; padding: 20px 0 20px 20px; }
+  .workflow::before { content: ""; position: absolute; inset: 13px 0 0 34px; border: 1px dashed #a9b5a6; border-radius: 28px; transform: rotate(3deg); }
+  .flow-card { position: relative; width: 76%; border: 1px solid var(--line); border-radius: 16px; padding: 17px; background: var(--paper); box-shadow: 0 11px 23px rgba(16,49,38,.09); }
+  .flow-card + .flow-card { margin-top: 11px; margin-left: 15%; }
+  .flow-card:nth-child(3) { margin-left: 7%; }
+  .flow-label { color: var(--muted); display: block; font-size: 11px; font-weight: 750; letter-spacing: .07em; margin-bottom: 5px; }
+  .flow-card strong { font-size: 16px; }
+  .flow-card .tick { float: right; display: grid; place-items: center; width: 23px; height: 23px; color: var(--forest); border-radius: 50%; background: var(--lime); font-weight: 900; }
+  .audit-area { padding: 28px 0 70px; }
+  .audit-top { display: flex; gap: 24px; align-items: end; justify-content: space-between; margin-bottom: 18px; }
+  h2 { margin-bottom: 7px; font: 600 clamp(30px, 4vw, 46px)/1 Georgia, "Times New Roman", serif; letter-spacing: -.05em; }
+  .subtle { color: var(--muted); margin-bottom: 0; }
+  .source-note { max-width: 250px; color: var(--muted); font-size: 12px; text-align: right; }
+  .form-card { overflow: hidden; border: 1px solid var(--forest); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow); }
+  .form-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 20px; color: #ebf0e9; background: var(--forest); font-size: 13px; }
+  .form-head strong { color: white; font-weight: 700; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; }
+  .field { padding: 21px; border-bottom: 1px solid var(--line); }
+  .field + .field { border-left: 1px solid var(--line); }
+  .field label { display: flex; justify-content: space-between; margin-bottom: 9px; font-size: 12px; font-weight: 800; letter-spacing: .035em; }
+  .field label span { color: var(--muted); font-weight: 500; letter-spacing: 0; }
+  textarea, input[type="text"] { width: 100%; color: var(--ink); background: #fbfbf7; border: 1px solid #d8ddd4; border-radius: 10px; outline: 0; padding: 12px; transition: border .15s, box-shadow .15s; }
+  textarea { min-height: 118px; resize: vertical; }
+  textarea:focus, input[type="text"]:focus { border-color: var(--forest); box-shadow: 0 0 0 3px rgba(22,60,48,.12); }
+  .form-bottom { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 15px 20px; }
+  .city-field { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 13px; }
+  .city-field input { width: 155px; padding: 8px 10px; }
+  .check { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+  .check input { accent-color: var(--forest); }
+  .button { display: inline-flex; justify-content: center; align-items: center; gap: 9px; min-height: 42px; border: 1px solid transparent; border-radius: 10px; padding: 9px 15px; font-size: 13px; font-weight: 750; transition: transform .15s, background .15s; }
+  .button:hover { transform: translateY(-1px); }
+  .button:disabled { opacity: .6; cursor: wait; transform: none; }
+  .button.primary { color: var(--forest); background: var(--lime); }
+  .button.primary:hover { background: #bff060; }
+  .button.dark { color: white; background: var(--forest); }
+  .button.ghost { color: var(--forest); border-color: var(--line); background: var(--paper); }
+  .button.tiny { min-height: 32px; padding: 5px 9px; font-size: 12px; }
+  .sample-row { display: flex; justify-content: space-between; gap: 15px; margin-top: 12px; color: var(--muted); font-size: 12px; }
+  .text-button { appearance: none; border: 0; padding: 0; color: var(--forest); background: transparent; font-weight: 750; text-decoration: underline; text-underline-offset: 3px; }
+  .result { display: none; margin-top: 36px; }
+  .result.visible { display: block; animation: rise .35s ease-out; }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .verdict { display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; padding: 19px 20px; border-radius: 14px; color: #f5f9f1; background: var(--forest); }
+  .verdict-icon { display: grid; place-items: center; width: 43px; height: 43px; border-radius: 50%; color: var(--forest); background: var(--lime); font-size: 21px; }
+  .verdict h3 { margin-bottom: 2px; font-size: 18px; }
+  .verdict p { margin: 0; color: #c9d7ca; font-size: 13px; }
+  .result-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr); gap: 20px; margin-top: 20px; }
+  .panel { min-width: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); }
+  [hidden] { display: none !important; }
+  .result-layout > *, .hero > * { min-width: 0; }
+  .snapshot-note { padding: 12px 0; color: var(--muted); font-size: 13px; }
+  .limits { margin-top: 18px; color: var(--muted); font-size: 12px; }
+  .limits ul { padding-left: 18px; }
+  select { max-width: 180px; padding: 8px; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; }
+  code { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .panel-head .small { overflow-wrap: anywhere; }
+  .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 17px 12px; }
+  .panel h3 { margin: 0; font-size: 15px; letter-spacing: -.02em; }
+  .panel .small { color: var(--muted); font-size: 12px; }
+  .candidate-list { padding: 0 12px 12px; }
+  .candidate { display: grid; grid-template-columns: 9px 1fr auto auto; gap: 12px; align-items: start; padding: 14px 6px; border-top: 1px solid var(--line); }
+  .candidate:first-child { border-top: 0; }
+  .status-line { width: 9px; min-height: 42px; border-radius: 7px; background: var(--yellow); }
+  .status-line.supported { background: #5bc98d; }
+  .status-line.generic, .status-line.unverified { background: var(--orange); }
+  .status-line.mismatch { background: var(--red); }
+  .candidate h4 { margin: 0 0 3px; font-size: 14px; }
+  .candidate p { max-width: 490px; margin: 0; color: var(--muted); font-size: 12px; }
+  .score { min-width: 64px; text-align: right; color: var(--forest); font-size: 18px; font-weight: 800; letter-spacing: -.05em; }
+  .score span { display: block; color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: 0; }
+  .evidence { padding: 0 16px 16px; }
+  .source-box { margin-bottom: 14px; padding: 12px; border-radius: 10px; background: #f0f4eb; }
+  .source-box.demo { background: #fff2e5; }
+  .source-box b { display: block; margin-bottom: 3px; color: var(--forest); font-size: 12px; }
+  .source-box.demo b { color: #a54a1d; }
+  .source-box p { margin: 0; color: var(--muted); font-size: 11px; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 16px; }
+  .tag { border: 1px solid #d5ded2; border-radius: 999px; padding: 4px 7px; color: var(--forest); background: #f7fbf3; font-size: 11px; }
+  .trace { margin: 0; padding: 0; list-style: none; }
+  .trace li { display: grid; grid-template-columns: 7px 1fr; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
+  .trace li::before { content: ""; width: 7px; height: 7px; margin-top: 6px; border-radius: 50%; background: var(--blue); }
+  .trace li[data-state="unavailable"]::before, .trace li[data-state="partial"]::before { background: var(--yellow); }
+  .trace li[data-state="demo"]::before { background: var(--orange); }
+  .trace strong { display: block; font-size: 12px; }
+  .trace span { display: block; color: var(--muted); font-size: 11px; }
+  .repair { margin-top: 20px; overflow: hidden; border: 1px solid #b5d6ae; border-radius: 14px; background: #f4faef; }
+  .repair-head { display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 15px 17px; border-bottom: 1px solid #cfe4c9; }
+  .repair h3 { margin: 0 0 2px; color: var(--forest); font-size: 15px; }
+  .repair p { margin: 0; color: #526a55; font-size: 12px; }
+  .repair-list { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .repair-item { padding: 15px; border-right: 1px solid #cfe4c9; }
+  .repair-item:last-child { border-right: 0; }
+  .repair-item strong { display: block; color: var(--forest); font-size: 13px; }
+  .repair-item span { display: block; margin-top: 4px; color: #526a55; font-size: 11px; }
+  .repair-item b { display: block; margin-top: 10px; color: var(--forest); font-size: 18px; letter-spacing: -.05em; }
+  .approval { display: none; align-items: center; justify-content: space-between; gap: 20px; margin-top: 20px; padding: 17px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); }
+  .approval.visible { display: flex; }
+  .approval h3 { margin: 0 0 2px; font-size: 14px; }
+  .approval p { margin: 0; color: var(--muted); font-size: 12px; }
+  .issued { display: none; margin-top: 20px; border: 1px solid var(--forest); border-radius: 14px; padding: 18px; background: #e8f2df; }
+  .issued.visible { display: block; }
+  .issued-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .issued h3 { margin: 0; color: var(--forest); font-size: 15px; }
+  .issued p { margin: 0; color: #506653; font-size: 12px; }
+  .receipt-data { margin: 12px 0; color: var(--forest); font-size: 12px; }
+  .receipt-data summary { cursor: pointer; font-weight: 650; }
+  .receipt-data code { max-height: 260px; overflow: auto; }
+  code { display: block; margin-top: 11px; padding: 10px; overflow-x: auto; border-radius: 8px; color: #d9edcf; background: var(--forest-2); font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .integration { display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: center; margin: 52px 0 25px; padding: 22px; border-radius: 16px; color: #e4eadf; background: var(--forest); }
+  .integration h2 { margin: 0 0 5px; color: white; font-size: 27px; }
+  .integration p { max-width: 620px; margin: 0; color: #bdcfbe; font-size: 13px; }
+  footer { padding: 12px 0 36px; color: var(--muted); font-size: 12px; }
+  .error { display: none; margin-top: 14px; padding: 11px 13px; border-left: 3px solid var(--red); border-radius: 6px; color: #8e2929; background: #fff0ef; font-size: 13px; }
+  .error.visible { display: block; }
+  @media (max-width: 800px) {
+    .hero, .result-layout { grid-template-columns: 1fr; gap: 30px; }
+    .hero { padding-top: 36px; }
+    .workflow { max-width: 500px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .field + .field { border-left: 0; border-top: 1px solid var(--line); }
+    .source-note { display: none; }
+  }
+  @media (max-width: 580px) {
+    .shell { width: min(100% - 24px, 1180px); }
+    header { padding: 14px 0; }
+    .top-meta .badge:last-child { display: none; }
+    h1 { font-size: clamp(36px, 10.5vw, 45px); }
+    .workflow { padding-right: 15px; }
+    .workflow::before { right: 10px; transform: none; }
+    .candidate { grid-template-columns: 6px minmax(0, 1fr) auto; gap: 8px; }
+    .candidate .score:last-child { grid-column: 3; }
+    .candidate > div:nth-child(2) { grid-row: span 2; }
+    .score { min-width: 58px; font-size: 15px; }
+    .sample-row { flex-wrap: wrap; }
+    .proof { gap: 8px; }
+    .form-head { gap: 12px; }
+    .form-head span { font-size: 11px; }
+    .integration { display: flex; }
+    .audit-top { display: block; }
+    .form-bottom, .approval, .integration { align-items: stretch; flex-direction: column; }
+    .form-bottom { display: flex; }
+    .city-field { flex-wrap: wrap; }
+    .button { width: 100%; }
+    .repair-list { grid-template-columns: 1fr; }
+    .repair-item { border-right: 0; border-bottom: 1px solid #cfe4c9; }
+    .repair-item:last-child { border-bottom: 0; }
+    .verdict { grid-template-columns: auto 1fr; }
+    .verdict .badge { grid-column: 2; width: max-content; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <a class="brand" href="/" aria-label="Receipt home"><span class="mark">✓</span>receipt</a>
+    <div class="top-meta">
+      <span class="badge"><span class="dot" id="statusDot"></span><span id="mode">Checking service…</span></span>
+      <span class="badge">Cultural QA for agents</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-heading">
+      <div>
+        <p class="eyebrow">QUALITY CONTROL FOR RECOMMENDATION AGENTS</p>
+        <h1 id="hero-heading">Make every recommendation <em>earn its receipt.</em></h1>
+        <p class="lede">Test whether an agent’s place recommendations fit the person. Inspect the evidence, watch it revise, and run a whole set of taste profiles.</p>
+        <div class="proof" aria-label="Product principles">
+          <span>Qloo-backed cultural fit</span>
+          <span>Explicit review confirmation</span>
+          <span>No invented reasons</span>
+        </div>
+      </div>
+      <div class="workflow" aria-label="Audit workflow">
+        <div class="flow-card"><span class="flow-label">01 — AN AGENT PROPOSES</span><strong>“Here are three dinner spots.”</strong></div>
+        <div class="flow-card"><span class="flow-label">02 — RECEIPT TESTS</span><strong>Does taste evidence support them?</strong><span class="tick">✓</span></div>
+        <div class="flow-card"><span class="flow-label">03 — A HUMAN RELEASES</span><strong>Only the grounded answer goes out.</strong></div>
+      </div>
+    </section>
+
+    <section class="audit-area" aria-labelledby="audit-heading">
+      <div class="audit-top">
+        <div>
+          <p class="eyebrow">INTERACTIVE AGENT TOOL</p>
+          <h2 id="audit-heading">Run a taste audit.</h2>
+          <p class="subtle">Give Receipt a person’s cultural anchors and the places another agent wants to recommend.</p>
+        </div>
+        <p class="source-note">Qloo affinity is a relative cultural-fit signal, not a promise that someone will like a place.</p>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Receipt workspace">
+        <button id="tabAudit" role="tab" aria-selected="true" aria-controls="auditWorkspace" type="button">01 · Audit a list</button>
+        <button id="tabAgent" role="tab" aria-selected="false" aria-controls="auditWorkspace" type="button">02 · Watch an agent revise</button>
+        <button id="tabBatch" role="tab" aria-selected="false" aria-controls="batchWorkspace" type="button">03 · Test an agent</button>
+      </div>
+      <section id="auditWorkspace" role="tabpanel" aria-labelledby="tabAudit">
+      <form class="form-card" id="auditForm">
+        <div class="form-head"><strong id="formTitle">Recommendation audit</strong><span id="formHint">Review every proposed place.</span></div>
+        <div class="form-grid">
+          <div class="field" id="candidateField">
+            <label for="anchors">Cultural anchors <span>one per line · 2 to 5</span></label>
+            <textarea id="anchors" required placeholder="Kendrick Lamar&#10;Everything Everywhere All at Once&#10;The Bear"></textarea>
+          </div>
+          <div class="field">
+            <label for="candidates">Agent’s proposed places <span>one per line · up to 6</span></label>
+            <textarea id="candidates" required placeholder="A proposed restaurant&#10;Another proposed restaurant&#10;One more place"></textarea>
+          </div>
+          <div class="field" id="agentField" hidden>
+            <label for="agentGoal">The agent’s task</label>
+            <textarea id="agentGoal" maxlength="1000">Find pre-show dinner for this fan, using the supplied location and tastes.</textarea>
+            <label class="agent-select" for="agentMode">AGENT SOURCE <select id="agentMode"><option value="scripted">Scripted workflow demo</option><option value="live" disabled>Live model · not configured</option><option value="qloo" disabled>Live Qloo discovery · rules-based</option></select></label>
+            <p class="micro" id="agentSourceHelp">Scripted mode uses synthetic places and scores. A live model requires explicit server configuration.</p>
+          </div>
+        </div>
+        <div class="constraint-controls">
+          <label for="category">PLACE TYPE <select id="category"><option value="restaurant">Restaurants</option><option value="any">All place types</option></select></label>
+          <label class="check"><input id="useVenue" type="checkbox"> Limit to a venue radius</label>
+          <div id="venueFields" class="venue-grid" hidden>
+            <label for="venueLabel">Venue label<input id="venueLabel" type="text" value="Demo Concert Hall" maxlength="100"></label>
+            <label for="venueLat">Latitude<input id="venueLat" type="number" value="39.74" step="any" min="-90" max="90"></label>
+            <label for="venueLon">Longitude<input id="venueLon" type="number" value="-104.99" step="any" min="-180" max="180"></label>
+            <label for="venueRadius">Radius (metres)<input id="venueRadius" type="number" value="5000" min="100" max="50000" step="100"></label>
+          </div>
+          <p class="micro">Radius uses straight-line distance from your supplied point. Opening hours and travel time are not checked.</p>
+        </div>
+        <div class="form-bottom">
+          <div class="city-field"><label for="city">CITY</label><input id="city" type="text" value="Denver, Colorado" required></div>
+          <div class="city-field"><label for="policy">POLICY</label><select id="policy"><option value="standard">Standard</option><option value="verified_only">Verified-only</option></select></div>
+          <label class="check"><input id="demo" type="checkbox"> Run synthetic demo evidence</label>
+          <button class="button primary" id="auditButton" type="submit">Audit recommendations <span aria-hidden="true">→</span></button>
+        </div>
+      </form>
+      <div class="sample-row"><span>Choose an example, or enter your own tastes and proposed places.</span><button class="text-button" id="loadLiveExample" type="button" hidden>Run live Denver example</button><button class="text-button" id="loadSample" type="button">Load synthetic sample</button></div>
+      <p class="micro" id="exampleSource" hidden>Hand-entered Denver example, evaluated with live Qloo data. This list is not a captured model response. Hours and availability are not checked.</p>
+      <div class="error" id="error" role="alert"></div>
+      <p class="snapshot-note" id="snapshotNote" role="status" hidden></p>
+      <div class="running-note" id="runProgress" role="status" hidden><div><strong id="runPhase">Preparing…</strong><p id="runElapsed">0 seconds</p></div><button class="button ghost tiny" id="cancelRun" type="button">Cancel run</button></div>
+      <section id="agentTimeline" class="agent-timeline" hidden aria-label="Agent revision rounds"></section>
+
+      <section class="result" id="result" aria-live="polite" aria-label="Audit result">
+        <div class="verdict">
+          <div class="verdict-icon" id="verdictIcon">!</div>
+          <div><h3 id="verdictTitle">Audit result</h3><p id="verdictDetail"></p></div>
+          <span class="badge" id="resultMode"></span>
+        </div>
+        <div class="result-layout">
+          <div>
+            <article class="panel">
+              <div class="panel-head"><div><h3>Proposed recommendations</h3><span class="small" id="universeNote">All candidates are scored against the same fixed city universe.</span></div><span class="small" id="fingerprint"></span></div>
+              <div class="candidate-list" id="candidateList"></div>
+            </article>
+            <article class="repair" id="repair" hidden>
+              <div class="repair-head"><div><h3>Suggested alternatives</h3><p>Send this critique to the source agent. Suggestions are not passed repairs.</p></div><button class="button ghost tiny" id="beginRevision" type="button">Start re-audit</button></div>
+              <div class="repair-list" id="repairList"></div>
+            </article>
+            <article class="approval" id="approval">
+              <div><h3>Confirm this result</h3><p>Confirmation records this exact score snapshot and policy.</p></div>
+              <button class="button dark" id="approve" type="button">Confirm reviewed result</button>
+            </article>
+            <article class="issued" id="issued">
+              <div class="issued-head"><span class="mark">✓</span><h3>Decision receipt issued</h3></div>
+              <p id="issuedText"></p>
+              <details class="receipt-data"><summary>Inspect receipt JSON</summary><code id="receiptCode"></code></details>
+              <button class="button ghost tiny" id="downloadReceipt" type="button">Download receipt</button>
+            </article>
+          </div>
+          <aside class="panel">
+            <div class="panel-head"><div><h3>Evidence trail</h3><span class="small">Coverage, comparison set, and the steps performed.</span></div></div>
+            <div class="evidence">
+              <div class="source-box" id="sourceBox"><b id="sourceLabel"></b><p id="sourceDetail"></p></div>
+              <span class="small">DECLARED TASTES</span>
+              <div class="tag-row" id="tags"></div>
+              <span class="small">AGENT TRACE</span>
+              <ol class="trace" id="trace"></ol>
+            </div>
+          </aside>
+        </div>
+        <details class="limits"><summary>What this result can establish</summary><ul id="limitsList"></ul></details>
+      </section>
+      </section>
+
+      <section id="batchWorkspace" role="tabpanel" aria-labelledby="tabBatch" hidden>
+        <article class="batch-input panel">
+          <div class="panel-head"><div><h3>Give an agent a report card.</h3><p class="subtle">Import captured recommendations for 2–20 profiles. Every pick is tested against one shared comparison set.</p></div></div>
+          <div class="batch-actions">
+            <button class="button ghost" type="button" id="loadBatchSample">Load 20-capture synthetic sample</button>
+            <button class="button ghost" id="importBatch" type="button">Import JSON</button><input id="batchFile" type="file" accept=".json,application/json" hidden>
+            <button class="button dark" type="button" id="runBatch">Run test suite →</button>
+          </div>
+          <details><summary>Captured-output JSON and source metadata</summary><label class="sr-only" for="batchJSON">Batch JSON</label><textarea id="batchJSON" spellcheck="false" placeholder="Load a sample or import captured outputs from your agent."></textarea></details>
+          <p class="micro">Output variation alone does not prove personalization. Repeat controls help show how much the same tastes vary between runs.</p>
+        </article>
+        <div id="batchError" class="error" role="alert"></div>
+        <div class="running-note" id="batchProgress" role="status" hidden><div><strong id="batchPhase">Preparing…</strong><p id="batchElapsed">0 seconds</p></div><button class="button ghost tiny" id="cancelBatch" type="button">Cancel run</button></div>
+        <section id="batchReport" hidden aria-live="polite"></section>
+      </section>
+
+      <section class="integration" aria-label="Agent integration">
+        <div><h2>A test your recommendation agent can call.</h2><p>Send a list for evaluation or submit captured outputs to the batch test-suite API. The report includes comparison coverage, sensitivity, and Qloo-relative findings.</p></div>
+        <button class="button primary" type="button" id="copyEndpoint">Copy agent endpoint</button>
+      </section>
+    </section>
+  </main>
+  <footer>Receipt never sends a Qloo key to the browser. Live Qloo results are not saved to this public codebase.</footer>
+</div>
+<script src="/static/receipt.js" defer></script>
+</body>
+</html>
