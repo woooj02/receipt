@@ -79,4 +79,4 @@ Verified-only requires a baseline and therefore holds results when it is absent.
 A real LLM capture study and preference/customer validation are not completed.
 Final Devpost submission has not been performed and needs separate approval.
 Docker image build verification remains unavailable because local socket access is denied.
-The release record and remaining approval are in submission/release-plan.md.
+The application has not been submitted to Devpost.

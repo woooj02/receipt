@@ -53,5 +53,4 @@ safety, accessibility and road travel time are not checked.
 
 The synthetic sample remains available if a live run hits a provider or demo
 limit. It is labelled separately and never substituted for a failed live run.
-The complete decisions and formulas are in [project.md](../project.md), and
-actual release checks are in [LIVE_VALIDATION.md](../LIVE_VALIDATION.md).
+Actual release checks are in [LIVE_VALIDATION.md](../LIVE_VALIDATION.md).

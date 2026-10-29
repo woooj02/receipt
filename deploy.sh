@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Ship this app to the Hetzner box as https://$DOMAIN.
 #
-# Same approach as runsheet: rsync the source, then build the venv on the box
+# Rsync the source, then build the venv on the box
 # (it's arm64, so a copied venv would break), and install the systemd unit and
 # nginx site. Safe to rerun: the unit is reinstalled only when it changes, and
 # the nginx site only on first deploy, because certbot edits it afterwards.
@@ -48,7 +48,10 @@ echo "==> upload"
 rsync -az --delete -e "ssh -i $KEY" \
   --exclude venv/ --exclude .env --exclude __pycache__/ --exclude .pytest_cache/ \
   --exclude .git/ --exclude 'data/' --exclude event-brief.md \
-  --exclude 'submission/video/' --exclude 'submission/VOICEOVER.md' ./ "$SERVER:$REMOTE/"
+  --exclude 'submission/video/' --exclude 'submission/VOICEOVER.md' \
+  --exclude project.md --exclude PROJECT_AUDIT.md --exclude PREKEY_HANDOFF.md \
+  --exclude REVIEW_FIXES.md --exclude prd.md --exclude spec.md --exclude scope.md \
+  --exclude submission/release-plan.md ./ "$SERVER:$REMOTE/"
 if [ "${1:-}" = "--env" ] && [ -f .env ]; then
   scp -q -i "$KEY" .env "$SERVER:$REMOTE/.env"
   "${SSH[@]}" "$SERVER" chmod 600 "$REMOTE/.env"

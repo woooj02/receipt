@@ -13,8 +13,8 @@ Real Qloo audits, revisions, receipts and rules-based agent runs are deployed.
 The city-only affinity baseline is unavailable; Taste Lift stays disabled.
 Optional paid-model runs and a real-model study have not been completed.
 
-For the complete purpose, decisions, formulas, limitations and audit questions,
-read [project.md](project.md).
+For measured behavior, integration findings and release checks, read
+[LIVE_VALIDATION.md](LIVE_VALIDATION.md). Internal audit/planning documents stay local.
 
 ## Run locally
 
@@ -155,7 +155,7 @@ The release uses deploy.sh on the existing Hetzner host: one native Python proce
 systemd and nginx HTTPS. Hosted Chrome workflows pass at 1440px and 390px.
 Dockerfile provides a separate non-root single-worker recipe. Local Docker socket
 access was denied, so the image is not build-verified.
-See [PREKEY_HANDOFF.md](PREKEY_HANDOFF.md) for the live gate and release status.
+See [LIVE_VALIDATION.md](LIVE_VALIDATION.md) for release evidence and limitations.
 
 ## License
 
