@@ -92,6 +92,7 @@ Verified-only requires a baseline and therefore holds results when it is absent.
   An actual rsync fixture regression, redeploy and hosted workflow checks pass.
 - A new private 2:10 recording uses actual hosted Qloo evidence and four actual
   ratings-agent control outputs. It is not an LLM study and has not been uploaded.
+
 ## Public release verification — October 29
 
 - Approved deployment: https://receipt.91.99.162.43.sslip.io/.
