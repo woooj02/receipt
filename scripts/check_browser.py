@@ -94,7 +94,7 @@ def run(screenshots=False):
                     evaluate("document.getElementById('loadSample').click()")
                     until(lambda: evaluate("document.querySelectorAll('.candidate').length === 3 && !document.getElementById('auditButton').disabled"))
                     assert evaluate("document.getElementById('resultMode').textContent") == "DEMO — SYNTHETIC"
-                    assert evaluate("document.getElementById('candidateList').textContent.includes('mismatch')")
+                    assert evaluate("document.getElementById('candidateList').textContent.includes('Weak taste match')")
                     assert evaluate("!document.getElementById('approval').classList.contains('visible')")
                     assert evaluate("document.documentElement.scrollWidth <= window.innerWidth"), "Horizontal overflow in result"
                     evaluate("document.getElementById('beginRevision').click()")

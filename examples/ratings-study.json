@@ -1,0 +1,16 @@
+{
+  "city": "Denver, Colorado",
+  "constraints": {"category": "restaurant", "venue": {"label": "The Mission Ballroom", "latitude": 39.776204, "longitude": -104.969168, "radius_m": 5000}},
+  "profiles": [
+    {"profile_id": "rap-cinema", "anchors": ["Kendrick Lamar", "Everything Everywhere All at Once"]},
+    {"profile_id": "pop", "anchors": ["Taylor Swift", "Lana Del Rey"]},
+    {"profile_id": "jazz", "anchors": ["Miles Davis", "John Coltrane"]},
+    {"profile_id": "soul-television", "anchors": ["Beyoncé", "The Bear"]},
+    {"profile_id": "alternative", "anchors": ["Radiohead", "Daft Punk"]},
+    {"profile_id": "latin-animation", "anchors": ["J Balvin", "Spirited Away"]},
+    {"profile_id": "jazz-rock", "anchors": ["Nina Simone", "David Bowie"]},
+    {"profile_id": "electronic", "anchors": ["Daft Punk", "Massive Attack"]},
+    {"profile_id": "country", "anchors": ["Dolly Parton", "Willie Nelson"]},
+    {"profile_id": "experimental", "anchors": ["Björk", "Portishead"]}
+  ]
+}

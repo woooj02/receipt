@@ -1,6 +1,31 @@
 # Receipt — live validation
 
-Checked October 28–29, 2026, Denver time. No paid model calls were made.
+Checked October 28–29, 2026, Denver time. No new model API key or API spend;
+the real MCP example used the user's existing local Claude subscription.
+
+## v0.6.0 audit fixes, October 29
+
+- Live Search verified all six pinned panel IDs. Runtime panel scoring no longer
+  resolves those names; full coverage for all three profiles remains mandatory.
+- Chrome at 1440 px and 390 px verifies a Dune (2021 movie) choice, informal
+  restaurant aliases, frozen title identity through revision, an overlap notice
+  and the labelled synthetic Distinctive taste panel. No uncaught JS errors.
+- Live Dune, Little Women and Arrival searches returned several identities with
+  media type/year. A user chooses explicitly; no ambiguous favourite is auto-picked.
+- Denver Central Market has distinct downtown/airport entities. City-wide alias
+  collisions stay unverified; the venue-radius scope distinguishes the live case.
+- An actual local Claude MCP run proposed its own initial list, then scored
+  0/3 → 2/3 → 3/3 with the same live comparison set. This uses the user's existing
+  client, not a hosted model sign-in or new model API key. First development attempt
+  was interrupted by auto-reloads; the completed run used a stable server.
+- [Real ratings-agent study](docs/ratings-study.md): all ten declared profiles,
+  30 picks: 12 supported, ten low panel lift, five mismatch, three unverified.
+  Nine profiles had full 50-place coverage. Not a controlled LLM benchmark.
+- A private 30.7-second replay clip shows the real Claude tool trace, with waiting
+  removed explicitly. Upload and final submission are separate actions.
+- The named former branch and removed stale workflow runs return 404. Current
+  source and reachable refs exclude internal documents. An old raw commit URL
+  still serves an internal file; deletion from GitHub caches remains unresolved.
 
 ## Current self-audit — v0.5.1, October 29
 

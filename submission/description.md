@@ -33,6 +33,12 @@ The panel is a declared comparison, not a population. Panel lift means personal
 percentile minus the mean percentile of Taylor Swift + Beyoncé, Metallica +
 Iron Maiden, and J Balvin + Shakira on the same place set.
 
+In a local real-Qloo study, the same highly rated shortlist cleared this setting
+for only 12 of 30 picks across ten curated profiles: ten more fit but lacked
+panel lift, five had weak matches and three couldn't be verified. This was an
+actual taste-blind ratings rules agent, not an LLM benchmark. The complete cohort,
+coverage and method are in [the study report](../docs/ratings-study.md).
+
 ## Who would use it
 
 Ticketing and concierge platforms can check pre-show dinner suggestions before
@@ -54,9 +60,15 @@ scope checks, frozen revisions and exact-snapshot confirmation.
 The live ratings agent starts with business ratings and applies explicit revision
 rules after receiving Receipt's critique. An optional model adapter lets a real
 LLM propose and revise separately; model execution is disabled on this hosted demo.
-An existing agent can call Receipt without adopting that adapter.
+An existing agent can call Receipt through its local MCP bridge without adopting that adapter.
 Its existing model access supplies the language generation; Receipt needs no
 extra LLM key to audit that agent's proposals.
+
+A real local Claude client demonstrated this integration: its own first picks
+passed 0/3, its second list passed 2/3, and its third passed 3/3 with the same
+tastes, constraints and comparison set. It used the user's existing client;
+no model credentials ran on our server. This is an integration example, not a
+controlled model comparison. [Setup and evidence](../docs/mcp.md).
 
 The application builds on a local FastAPI starter. Receipt's evaluator, location
 checks, reference panel, agent loop, review flow and report workspaces are the

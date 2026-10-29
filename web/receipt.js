@@ -8,6 +8,7 @@ document.addEventListener("error", (event) => {
 }, true);
 let current = null, revisionOf = null, issuedReceipt = null, batchResult = null;
 let busy = false, activeJob = null, view = "audit", liveConfigured = false;
+let selectedAnchors = {};
 const contextInputs = ["anchors", "city", "policy", "demo", "category", "useVenue", "venueLabel", "venueLat", "venueLon", "venueRadius"];
 
 async function api(path, options) {
@@ -84,6 +85,7 @@ contextInputs.concat(["candidates", "agentGoal", "agentMode"]).forEach((id) => {
   $(id).addEventListener("change", invalidate);
 });
 $("useVenue").addEventListener("change", () => { $("venueFields").hidden = !$("useVenue").checked; });
+$("anchors").addEventListener("input", () => { selectedAnchors = {}; $("anchorChooser").hidden = true; });
 
 api("/api/health").then((health) => {
   $("mode").textContent = health.mode;
@@ -120,6 +122,7 @@ function constraintsPayload() {
   return {category:$("category").value, venue};
 }
 function loadSyntheticForm() {
+  selectedAnchors = {}; $("anchorChooser").hidden = true;
   $("exampleSource").hidden = true;
   revisionOf = null;
   $("anchors").value = "Kendrick Lamar\nEverything Everywhere All at Once\nThe Bear";
@@ -143,6 +146,7 @@ $("loadSample").onclick = () => { loadSyntheticForm(); $("auditForm").requestSub
 $("loadLiveExample").onclick = () => {
   if (!liveConfigured || busy) return;
   revisionOf = null;
+  selectedAnchors = {}; $("anchorChooser").hidden = true;
   const targetView = view === "agent" ? "agent" : "audit";
   showView(targetView);
   $("anchors").value = "Kendrick Lamar\nEverything Everywhere All at Once";
@@ -218,6 +222,29 @@ $("auditForm").onsubmit = async (event) => {
   $("auditButton").textContent = isAgent ? "Agent is working…" : "Auditing…";
   $("agentTimeline").hidden = true;
   try {
+    const live = isAgent ? $("agentMode").value !== "scripted" : !$("demo").checked && liveConfigured;
+    if (live && !revisionOf) {
+      const resolved = await post("/api/anchors/resolve", {anchors});
+      const ambiguous = resolved.anchors.filter((row) => row.options.length > 1 &&
+        !row.options.some((option) => selectedAnchors[row.query] === option.id));
+      if (ambiguous.length) {
+        const chooser = $("anchorChooser"); chooser.hidden = false;
+        chooser.innerHTML = '<div class="panel-head"><div><h3>Which one did you mean?</h3><p>Select the exact title. Receipt never chooses an ambiguous favourite for you.</p></div></div>' +
+          ambiguous.map((row, i) => '<div class="field"><strong>' + esc(row.query) + '</strong><div>' +
+            row.options.map((option, j) => '<button type="button" class="button ghost tiny" data-anchor="' + i + '" data-option="' + j + '">' +
+              esc(option.name + ' · ' + option.type.replace('urn:entity:', '').replaceAll('_',' ') + (option.year ? ' · ' + option.year : '') + ' · ID ' + option.id.slice(0,8)) + '</button>').join(' ') + '</div></div>').join('');
+        chooser.querySelectorAll('button').forEach((button) => { button.onclick = () => {
+          if (busy) return;
+          const row = ambiguous[Number(button.dataset.anchor)];
+          selectedAnchors[row.query] = row.options[Number(button.dataset.option)].id;
+          chooser.hidden = true; $("auditForm").requestSubmit();
+        }; });
+        chooser.scrollIntoView({behavior:"smooth", block:"center"});
+        return;
+      }
+    }
+    $("anchorChooser").hidden = true;
+    payload.anchor_selections = selectedAnchors;
     const result = await runJob(isAgent ? "agent" : "audit", payload, false);
     if (isAgent) {
       current = result.final_audit;
@@ -239,6 +266,7 @@ function startRevision(snapshot) {
   const previous = snapshot.audit_id;
   showView("audit");
   revisionOf = previous;
+  selectedAnchors = snapshot.anchor_selections || {};
   invalidate(); setBusy(false);
   $("auditButton").textContent = "Audit revised list →";
 }
@@ -269,7 +297,7 @@ $("approve").onclick = async () => {
     $("receiptPreview").innerHTML = '<p class="receipt-caption">YOUR REVIEWED PICKS · ' + esc(issuedReceipt.city) + '</p>' +
       issuedReceipt.approved_recommendations.map((item) => '<article class="receipt-pick"><h4>✓ ' + esc(item.name) + '</h4>' + placeDetails(item) +
       '<p>Taste rank ' + percentile(item.personal_percentile) + ' · ' +
-      (issuedReceipt.source.mode === 'DEMO' ? 'Synthetic lift ' + lift(item.taste_lift) : 'Panel lift ' + lift(item.panel_lift)) + '</p>' +
+      (issuedReceipt.source.mode === 'DEMO' ? (issuedReceipt.policy.minimum_panel_lift == null ? 'Synthetic lift ' + lift(item.taste_lift) : 'Synthetic panel lift ' + lift(item.panel_lift)) : 'Panel lift ' + lift(item.panel_lift)) + '</p>' +
       '<p>' + esc(anchorNote(item.anchor_removals)) + '</p></article>').join("");
     $("receiptCode").textContent = JSON.stringify(issuedReceipt, null, 2);
     $("issued").classList.add("visible");
@@ -304,9 +332,11 @@ function renderAudit(data) {
     '</p><p>' + esc(anchorNote(item.anchor_removals)) + '</p>' +
     (item.distance_m == null ? "" : '<p>' + esc(item.distance_m) + ' m straight-line from the supplied venue point.</p>') + '</div>' +
     '<div class="score" title="Percentile rank within this comparison set, not a probability of enjoyment">' + percentile(item.personal_percentile) + '<span>Taste rank</span></div>' +
-    '<div class="score">' + lift(data.source.mode === "DEMO" ? item.taste_lift : item.panel_lift) + '<span>' +
-    (data.source.mode === "DEMO" ? "synthetic lift" : "Panel lift") + '</span></div></div>').join("");
+    '<div class="score">' + lift(data.source.mode === "DEMO" && data.policy_id !== "personalized" ? item.taste_lift : item.panel_lift) + '<span>' +
+    (data.source.mode === "DEMO" ? (data.policy_id === "personalized" ? "synthetic panel lift" : "synthetic lift") : "Panel lift") + '</span></div></div>').join("");
   const panel = data.reference_panel || {};
+  $("panelOverlap").hidden = !panel.overlap_notice;
+  $("panelOverlap").textContent = panel.overlap_notice || "";
   $("panelDefinition").textContent = (panel.definition || "Reference panel unavailable for this source.") + " " +
     (panel.profiles || []).map((p) => p.label + ": " + p.anchors.join(" + ")).join("; ") + " " + (panel.reason || "");
   const suggestions = data.repairs || [];
@@ -317,7 +347,7 @@ function renderAudit(data) {
   $("sourceBox").classList.toggle("demo", data.source.mode === "DEMO");
   $("sourceLabel").textContent = data.source.label;
   $("sourceDetail").textContent = data.source.detail;
-  $("tags").innerHTML = data.anchors.map((anchor) => '<span class="tag">' + esc(anchor.resolved_name || anchor.name) + ' · ' + esc(anchor.resolution) + '</span>').join("");
+  $("tags").innerHTML = data.anchors.map((anchor) => '<span class="tag">' + esc(anchor.resolved_name || anchor.name) + ' · ' + (anchor.resolution === 'resolved' ? 'Matched' : 'Couldn’t verify') + '</span>').join("");
   $("trace").innerHTML = data.trace.map((item) => '<li data-state="' + esc(item.state) +
     '"><div><strong>' + esc(item.step) + '</strong><span>' + esc(item.detail) + '</span></div></li>').join("");
   $("limitsList").innerHTML = data.limitations.map((item) => '<li>' + esc(item) + '</li>').join("");
@@ -400,7 +430,8 @@ function renderBatch(data) {
   const rows = data.profiles.map((profile) => {
     const count = (status) => profile.candidates.filter((item) => item.status === status).length;
     return '<tr><td><details><summary>' + esc(profile.profile_id) + '</summary>' +
-      profile.candidates.map((item) => '<p>' + esc(item.name) + ' · ' + esc(item.status) + '</p>').join("") +
+      (profile.reference_panel?.overlap_notice ? '<p>' + esc(profile.reference_panel.overlap_notice) + '</p>' : '') +
+      profile.candidates.map((item) => '<p>' + esc(item.name) + ' · ' + esc(statusLabel(item.status)) + '</p>').join("") +
       '</details></td><td>' + count("supported") + '</td><td>' + count("shared_taste") + '</td><td>' + (data.metrics.generic_rate_available ? count("generic") : "—") + '</td><td>' +
       count("mismatch") + '</td><td>' + (count("unverified") + count("ineligible")) + '</td><td>' +
       profile.scoring_coverage.scored + '/' + profile.scoring_coverage.required + '</td></tr>';
@@ -420,7 +451,7 @@ function renderBatch(data) {
     ' across ' + m.repeat_control_groups + ' groups</span><span>Constraint failures: ' + rate(m.constraint_failure_rate) + '</span></div>' +
     '<div class="profile-bars"><h3>Every submitted pick stays in the report</h3>' + data.profiles.map((profile) => {
       const total = profile.candidates.length;
-      const groups = [['supported','Supported'],['shared_taste','Shared with panel'],['generic','Generic'],['mismatch','Mismatch'],['unverified','Unverified'],['ineligible','Outside constraints']];
+      const groups = ['supported','shared_taste','generic','mismatch','unverified','ineligible'].map((value) => [value,statusLabel(value)]);
       return '<div class="profile-bar"><span>' + esc(profile.profile_id) + '</span><div class="bar-track" role="img" aria-label="' +
         esc(groups.map(([s,label]) => label + ': ' + profile.candidates.filter((x) => x.status === s).length).join(', ')) + '">' +
         groups.map(([s,label]) => { const count = profile.candidates.filter((x) => x.status === s).length; return count ? '<span class="bar-' + s + '" style="width:' + (100*count/total) + '%" title="' + esc(label) + ': ' + count + '">' + count + '</span>' : ''; }).join('') + '</div></div>';
@@ -441,7 +472,7 @@ function anchorNote(effects) {
     ? "Removing " + strongest.anchor + " lowered this rank the most (" + Math.round(strongest.rank_drop * 100) + " points)."
     : "No single anchor removal lowered this rank in the tested set.";
 }
-function statusLabel(value) { return value === 'shared_taste' ? 'shared with panel' : value; }
+function statusLabel(value) { return ({supported:'Fits the selected standard', shared_taste:'Good fit, but not distinctive', unverified:'Couldn’t verify', mismatch:'Weak taste match', generic:'No measured taste lift', ineligible:'Outside your requirements'})[value] || value; }
 function placeDetails(item) {
   const place = item.place || {};
   const contribution = (item.qloo_contributions || []).map((x) => x.anchor + ' ' + Math.round(x.score * 100) + '%').join(' · ');

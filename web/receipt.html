@@ -284,6 +284,7 @@
       <div class="sample-row"><span>Choose an example, or enter your own tastes and proposed places.</span><button class="text-button" id="loadLiveExample" type="button" hidden>Run live Denver example</button><button class="text-button" id="loadSample" type="button">Load synthetic sample</button></div>
       <p class="micro" id="exampleSource" hidden>Hand-entered Denver example, evaluated with live Qloo data. This list is not a captured model response. Hours and availability are not checked.</p>
       <div class="error" id="error" role="alert"></div>
+      <section id="anchorChooser" class="panel" aria-live="polite" hidden></section>
       <p class="snapshot-note" id="snapshotNote" role="status" hidden></p>
       <div class="running-note" id="runProgress" role="status" hidden><div><strong id="runPhase">Preparing…</strong><p id="runElapsed">0 seconds</p></div><button class="button ghost tiny" id="cancelRun" type="button">Cancel run</button></div>
       <section id="agentTimeline" class="agent-timeline" hidden aria-label="Agent revision rounds"></section>
@@ -327,6 +328,7 @@
             </div>
           </aside>
         </div>
+        <p id="panelOverlap" class="snapshot-note" hidden></p>
         <details class="limits"><summary>How the reference panel works</summary><div id="panelDefinition"></div></details>
         <details class="limits"><summary>Limits and definitions</summary><ul id="limitsList"></ul></details>
       </section>

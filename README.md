@@ -6,6 +6,10 @@
 [Judge walkthrough](submission/testing-instructions.md) ·
 [Live verification](LIVE_VALIDATION.md)
 
+**Real local study:** the same top-rated shortlist cleared the declared taste
+check on 12 of 30 picks across ten curated profiles.
+[All outcomes and method](docs/ratings-study.md) · [Connect your own AI via MCP](docs/mcp.md).
+
 Receipt checks an agent's restaurant picks against the person's music, films,
 books and shows using Qloo. It returns a critique, tests the changed list against
 the same comparison set, and attaches a reviewed receipt to the result.
@@ -64,10 +68,12 @@ flowchart LR
 - **Taste rank** is a mid-rank percentile within this set, not an enjoyment probability.
 - **Panel lift** is personal percentile minus the mean percentile of three fixed,
   equally weighted profiles: Taylor Swift + Beyoncé; Metallica + Iron Maiden;
-  J Balvin + Shakira. Version: contrasting-music-v2. Same IDs, filters and affinity
+  J Balvin + Shakira. Version: contrasting-music-v3-pinned. Same IDs, filters and affinity
   field throughout. All three profiles must have complete scores.
 - This curated music panel is **not a representative crowd or popularity estimate**.
   It can overlap the person's tastes. Changing its membership changes the metric.
+  Overlap is shown explicitly. The six verified input IDs are pinned to avoid
+  ambiguous name searches during a check. Synthetic mode has labelled invented panel scores.
 - **Taste match** requires rank ≥ P60. **Distinctive taste** additionally requires
   panel lift ≥ +10 percentile points. These are prototype thresholds.
 - The original city-only Taste Lift/generic rate remain unavailable on the live

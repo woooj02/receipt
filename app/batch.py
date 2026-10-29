@@ -6,7 +6,7 @@ import secrets
 
 from .context import prepare
 from .evaluation import CapturedAgentRun, below_lift_bar, sensitivity
-from .qloo import normalize_name
+from .qloo import normalize_name, taste_identity
 from .receipt import AuditError, audit
 
 
@@ -24,9 +24,10 @@ def run_test_suite(*, agent, city, profiles, force_demo, policy="standard", scop
         progress(f"Evaluating captured profile {len(audits) + 1} of {len(profiles)}")
         result = audit(anchors=profile["anchors"], candidates=profile["recommendations"],
                        city=city, force_demo=force_demo, policy=policy, comparison=comparison,
-                       owner=suite_id, scope=scope)
+                       owner=suite_id, scope=scope, anchor_selections=profile.get("anchor_selections"))
         audits.append({"profile_id": profile["profile_id"], "audit_id": result["audit_id"],
                        "source": result["source"], "candidates": result["candidates"],
+                       "reference_panel": result["reference_panel"],
                        "scoring_coverage": result["scoring_coverage"],
                        "comparison_fingerprint": result["comparison_fingerprint"]})
         captured.append(CapturedAgentRun(profile["profile_id"],
@@ -41,7 +42,7 @@ def run_test_suite(*, agent, city, profiles, force_demo, policy="standard", scop
     for profile, capture in zip(profiles, captured):
         if profile.get("control_group"):
             key = profile["control_group"]
-            identity = frozenset(map(normalize_name, profile["anchors"]))
+            identity = taste_identity(profile["anchors"], profile.get("anchor_selections"))
             if key in controls and controls[key]["anchors"] != identity:
                 raise AuditError("Repeat controls must use the same tastes within each control group.")
             controls.setdefault(key, {"anchors": identity, "runs": []})["runs"].append(capture)
@@ -52,7 +53,7 @@ def run_test_suite(*, agent, city, profiles, force_demo, policy="standard", scop
         "fixed_universe_count": len(comparison.ids), "comparison_fingerprint": comparison.fingerprint,
         "constraints": comparison.scope.public(),
         "reference_panel": comparison.panel_metadata,
-        "unique_taste_profile_count": len({tuple(sorted(map(normalize_name, profile["anchors"]))) for profile in profiles}),
+        "unique_taste_profile_count": len({taste_identity(profile["anchors"], profile.get("anchor_selections")) for profile in profiles}),
         "metrics": {
             "sensitivity": sensitivity(captured),
             "sensitivity_definition": "Mean pairwise Jaccard distance of normalized supplied place names. Measures output variation, not quality.",

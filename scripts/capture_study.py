@@ -45,6 +45,7 @@ def capture(spec, repeat, model):
                 result = model.propose(brief)
                 captured.append({"profile_id": profile.profile_id + "-run-" + str(index + 1),
                                  "control_group": profile.profile_id, "anchors": profile.anchors,
+                                 "anchor_selections": profile.anchor_selections,
                                  "recommendations": result.recommendations})
     payload = {"agent_name": "OpenAI Responses capture", "agent_version": model.model,
                "prompt_version": "receipt-capture-v1-" + hashlib.sha256(json.dumps(

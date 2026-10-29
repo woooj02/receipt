@@ -15,6 +15,7 @@ from .evaluation import POLICIES, complete_percentiles, decide
 from .qloo import QlooError, normalize_name
 from .runtime import progress, remaining
 from .scope import Scope
+from .reference_panel import for_person
 
 PENDING: dict = {}
 _LOCK = RLock()
@@ -27,9 +28,13 @@ class AuditError(ValueError):
 
 
 def audit(*, anchors, candidates, city, force_demo=False, revision_of=None,
-          policy="standard", owner="local", comparison: Comparison | None = None, scope=None):
+          policy="standard", owner="local", comparison: Comparison | None = None, scope=None,
+          anchor_selections=None):
     scope = scope or Scope()
     _validate(anchors, candidates, city, policy)
+    selections = {normalize_name(name): entity_id for name, entity_id in (anchor_selections or {}).items()}
+    if set(selections) - set(map(normalize_name, anchors)):
+        raise AuditError("Title selections must belong to the supplied tastes.")
     with _LOCK:
         _discard_expired()
         previous = PENDING.get(revision_of) if revision_of else None
@@ -37,6 +42,8 @@ def audit(*, anchors, candidates, city, force_demo=False, revision_of=None,
             raise AuditError("Original audit is unavailable in this session.")
         if previous:
             original = previous["result"]
+            if selections != original.get("anchor_selections", {}):
+                raise AuditError("A revision must keep the same selected title identities.")
             if (normalize_name(city) != normalize_name(original["city"])
                     or sorted(map(normalize_name, anchors)) != sorted(map(normalize_name, original["input_anchors"]))
                     or policy != original["policy_id"]):
@@ -49,10 +56,10 @@ def audit(*, anchors, candidates, city, force_demo=False, revision_of=None,
             if force_demo != original["requested_demo"]:
                 raise AuditError("A revision cannot change its evidence mode.")
     comparison = comparison or prepare(city, candidates, force_demo, scope)
-    result = _evaluate(comparison, anchors, candidates, policy)
+    result = _evaluate(comparison, anchors, candidates, policy, selections)
     remaining()
     result.update(input_anchors=list(anchors), input_candidates=list(candidates),
-                  requested_demo=force_demo, re_audit_of=revision_of)
+                  requested_demo=force_demo, re_audit_of=revision_of, anchor_selections=selections)
     result["approval_eligible"] = bool(result["candidates"]) and all(
         row["status"] == "supported" for row in result["candidates"])
     result["verdict"] = _verdict(result)
@@ -110,10 +117,14 @@ def approve(audit_id, *, owner="local", review_token=None, fingerprint=None):
         return deepcopy(entry["issued"])
 
 
-def _evaluate(context, anchors, candidates, policy_id):
+def _evaluate(context, anchors, candidates, policy_id, selections=None):
     progress("Resolving cultural anchors")
     client = context.client
-    resolved_anchors = [client.resolve_anchor(name) for name in anchors]
+    selections = selections or {}
+    resolved_anchors = [client.resolve_anchor(name, selected_id=selections[normalize_name(name)])
+                        if normalize_name(name) in selections else client.resolve_anchor(name) for name in anchors]
+    if any(normalize_name(name) in selections and item is None for name, item in zip(anchors, resolved_anchors)):
+        raise AuditError("A selected title no longer matches its search. Choose it again in a new audit.")
     distinct = {item.entity_id for item in resolved_anchors if item}
     anchor_complete = all(resolved_anchors) and len(distinct) == len(anchors)
     trace = [{"step": "Resolve tastes", "state": "complete" if anchor_complete else "partial",
@@ -204,7 +215,7 @@ def _evaluate(context, anchors, candidates, policy_id):
                      "resolution": "resolved" if entity else "unverified"}
                     for name, entity in zip(anchors, resolved_anchors)],
         "candidates": output, "repairs": suggestions, "trace": trace,
-        "reference_panel": context.panel_metadata,
+        "reference_panel": for_person(context.panel_metadata, resolved_anchors),
         "fixed_universe_count": len(context.ids), "comparison_fingerprint": context.fingerprint,
         "scoring_coverage": {"scored": sum(value is not None for value in scored.values()),
                              "required": len(context.ids), "complete": ranks_available},

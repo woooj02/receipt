@@ -1,0 +1,2 @@
+# Optional local client bridge. The hosted app does not invoke a model.
+mcp==1.26.0

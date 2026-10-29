@@ -15,7 +15,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StringConstrai
 import json
 
 from .batch import run_test_suite
-from .qloo import QlooClient, QlooError, normalize_name
+from .qloo import QlooClient, QlooError, normalize_name, taste_identity
 from .receipt import AuditError, approve, audit, review
 from .agent import AgentError, run_loop
 from .guard import CapacityError, RequestGuard, work_slot
@@ -24,7 +24,7 @@ from .runtime import WorkTimeout, work_budget
 from .scope import Scope, Venue
 
 WEB = Path(__file__).resolve().parent.parent / "web"
-app = FastAPI(title="Receipt", description="Cultural quality checks for recommendation agents.", version="0.5.1")
+app = FastAPI(title="Receipt", description="Cultural quality checks for recommendation agents.", version="0.6.0")
 app.mount("/static", StaticFiles(directory=WEB), name="static")
 app.add_middleware(RequestGuard)
 
@@ -59,7 +59,11 @@ class ConstraintInput(InputModel):
         return Scope(self.category, Venue(**self.venue.model_dump()) if self.venue else None)
 
 
-class AuditRequest(InputModel):
+class AnchorSelections(InputModel):
+    anchor_selections: dict[Name, Annotated[str, StringConstraints(min_length=1, max_length=100)]] = Field(default_factory=dict, max_length=5)
+
+
+class AuditRequest(AnchorSelections):
     anchors: list[Name] = Field(min_length=2, max_length=5)
     candidates: list[Name] = Field(min_length=1, max_length=6)
     city: City
@@ -83,7 +87,7 @@ class BrowserApproval(ApprovalRequest):
     fingerprint: str = Field(pattern=r"^[0-9a-f]{64}$")
 
 
-class CapturedProfile(InputModel):
+class CapturedProfile(AnchorSelections):
     profile_id: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
     anchors: list[Name] = Field(min_length=2, max_length=5)
     recommendations: list[Name] = Field(min_length=1, max_length=6)
@@ -114,14 +118,14 @@ class BatchTestRequest(InputModel):
         controls = {}
         for profile in profiles:
             if profile.control_group:
-                tastes = frozenset(map(normalize_name, profile.anchors))
+                tastes = taste_identity(profile.anchors, profile.anchor_selections)
                 if profile.control_group in controls and controls[profile.control_group] != tastes:
                     raise ValueError("Repeat controls must keep the same tastes.")
                 controls[profile.control_group] = tastes
         return profiles
 
 
-class AgentRunRequest(InputModel):
+class AgentRunRequest(AnchorSelections):
     anchors: list[Name] = Field(min_length=2, max_length=5)
     city: City
     goal: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)] = "Pre-show dinner"
@@ -191,16 +195,37 @@ def _execute(kind, payload, owner):
         if kind == "audit":
             return audit(anchors=payload.anchors, candidates=payload.candidates, city=payload.city,
                          policy=payload.policy, force_demo=payload.demo, revision_of=payload.revision_of,
-                         owner=owner, scope=payload.constraints.to_scope())
+                         owner=owner, scope=payload.constraints.to_scope(), anchor_selections=payload.anchor_selections)
         if kind == "agent":
             return run_loop(anchors=payload.anchors, city=payload.city, goal=payload.goal,
                             mode=payload.mode, owner=owner, policy=payload.policy,
-                            scope=payload.constraints.to_scope(), max_rounds=payload.max_rounds)
+                            scope=payload.constraints.to_scope(), max_rounds=payload.max_rounds,
+                            anchor_selections=payload.anchor_selections)
         agent = {"name": payload.agent_name, "version": payload.agent_version,
                  "prompt_version": payload.prompt_version, "captured_at": payload.captured_at.isoformat(),
                  "provenance": "caller_supplied_unverified"}
         return run_test_suite(agent=agent, city=payload.city, profiles=[p.model_dump() for p in payload.profiles],
                               force_demo=payload.demo, policy=payload.policy, scope=payload.constraints.to_scope())
+
+
+class AnchorLookup(InputModel):
+    anchors: list[Name] = Field(min_length=2, max_length=5)
+
+
+@app.post("/api/anchors/resolve")
+def resolve_anchors(payload: AnchorLookup):
+    """List matching identities. A client must explicitly choose ambiguous ones."""
+    try:
+        with work_slot(), work_budget(45):
+            client = QlooClient()
+            if not client.configured:
+                raise HTTPException(503, "Live title lookup needs Qloo. Use the synthetic example instead.")
+            return {"anchors": [{"query": name, "options": [
+                {"id": item.entity_id, "name": item.name, "type": item.entity_type,
+                 "year": item.release_year} for item in client.anchor_options(name)]}
+                for name in payload.anchors]}
+    except QlooError as exc:
+        raise HTTPException(502, str(exc)) from exc
 
 
 @app.post("/api/agent/audit")

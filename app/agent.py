@@ -152,7 +152,8 @@ class OpenAIAgent:
         return validate_proposal(decoded, allowed)
 
 
-def run_loop(*, anchors, city, goal, mode, owner, policy="standard", scope=None, max_rounds=3):
+def run_loop(*, anchors, city, goal, mode, owner, policy="standard", scope=None, max_rounds=3,
+             anchor_selections=None):
     scope = scope or Scope()
     if not 1 <= max_rounds <= 3:
         raise AgentError("An agent run is limited to one to three audit rounds.")
@@ -183,7 +184,7 @@ def run_loop(*, anchors, city, goal, mode, owner, policy="standard", scope=None,
         progress(f"Auditing agent round {index + 1}")
         result = audit(anchors=anchors, candidates=proposal.recommendations, city=city,
                        force_demo=mode == "scripted", revision_of=parent, policy=policy,
-                       owner=owner, comparison=comparison, scope=scope)
+                       owner=owner, comparison=comparison, scope=scope, anchor_selections=anchor_selections)
         rounds.append({"round": index + 1, "proposal": proposal.model_dump(), "audit": result})
         parent = result["audit_id"]
         if result["approval_eligible"]:

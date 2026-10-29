@@ -68,6 +68,7 @@ class Entity:
     business_rating: float | None = field(default=None, kw_only=True)
     price_level: int | None = field(default=None, kw_only=True)
     keywords: tuple[str, ...] = field(default=(), kw_only=True)
+    release_year: str | None = field(default=None, kw_only=True)
 
 
 @dataclass(frozen=True)
@@ -120,8 +121,14 @@ class QlooClient:
     def reference_panel_enabled(self):
         return os.environ.get("RECEIPT_REFERENCE_PANEL", "1") == "1"
 
-    def resolve_anchor(self, name: str) -> Entity | None:
-        return self._resolve(name, ANCHOR_TYPES)
+    def anchor_options(self, name: str) -> list[Entity]:
+        return self._matches(name, ANCHOR_TYPES)
+
+    def resolve_anchor(self, name: str, selected_id: str | None = None) -> Entity | None:
+        matches = self.anchor_options(name)
+        if selected_id:
+            return next((item for item in matches if item.entity_id == selected_id), None)
+        return matches[0] if len(matches) == 1 else None
 
     def resolve_place(self, name: str, city: str) -> Entity | None:
         # A city is an ambiguity aid during search. The final Insights call also
@@ -192,6 +199,10 @@ class QlooClient:
         return list(found.values())
 
     def _resolve(self, name: str, entity_types: str, city: str | None = None) -> Entity | None:
+        confirmed = self._matches(name, entity_types, city)
+        return confirmed[0] if len(confirmed) == 1 else None
+
+    def _matches(self, name: str, entity_types: str, city: str | None = None) -> list[Entity]:
         params = {"query": name, "types": entity_types, "take": "8"}
         scope = getattr(self, "scope", Scope())
         if city and scope.venue:
@@ -221,7 +232,7 @@ class QlooClient:
             confirmed[entity.entity_id] = entity
         # Ambiguous names require explicit disambiguation; picking the first
         # search result is not evidence that it is the intended place or title.
-        return next(iter(confirmed.values())) if len(confirmed) == 1 else None
+        return list(confirmed.values())
 
     def _get(self, path: str, params: dict[str, str]) -> dict[str, Any]:
         remaining()
@@ -307,6 +318,7 @@ class QlooClient:
         return Entity(entity_id, name, str(entity_type), latitude=latitude, longitude=longitude,
                       tags=tuple(sorted(set(tag_ids))), address=_text(properties.get("address"), 300),
                       image_url=image_url, business_rating=rating,
+                      release_year=_release_year(properties),
                       price_level=price if type(price) is int and 0 <= price <= 4 else None,
                       keywords=tuple(k[:80] for k in keywords[:8] if isinstance(k, str))
                       if isinstance(keywords, list) else ()) if entity_id and name else None
@@ -359,7 +371,23 @@ def _bounded_number(value, maximum):
 def normalize_name(value: str) -> str:
     value = unicodedata.normalize("NFKD", value).casefold()
     value = "".join(char for char in value if not unicodedata.combining(char))
-    return " ".join(re.findall(r"[^\W_]+", value, flags=re.UNICODE))
+    words = re.findall(r"[^\W_]+", value.replace("&", " and "), flags=re.UNICODE)
+    if len(words) > 1 and words[0] == "the":
+        words = words[1:]
+    return " ".join(words)
+
+
+def _release_year(properties):
+    for key in ("release_year", "release_date", "publication_date", "year"):
+        match = re.match(r"^(\d{4})(?:\D|$)", str(properties.get(key, "")))
+        if match:
+            return match[1]
+    return None
+
+
+def taste_identity(anchors, selections=None):
+    choices = {normalize_name(name): entity_id for name, entity_id in (selections or {}).items()}
+    return frozenset((normalize_name(name), choices.get(normalize_name(name))) for name in anchors)
 
 
 def _coordinate(value, bound):
