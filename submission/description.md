@@ -55,6 +55,8 @@ The live ratings agent starts with business ratings and applies explicit revisio
 rules after receiving Receipt's critique. An optional model adapter lets a real
 LLM propose and revise separately; model execution is disabled on this hosted demo.
 An existing agent can call Receipt without adopting that adapter.
+Its existing model access supplies the language generation; Receipt needs no
+extra LLM key to audit that agent's proposals.
 
 The application builds on a local FastAPI starter. Receipt's evaluator, location
 checks, reference panel, agent loop, review flow and report workspaces are the

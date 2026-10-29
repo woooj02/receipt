@@ -24,7 +24,7 @@ from .runtime import WorkTimeout, work_budget
 from .scope import Scope, Venue
 
 WEB = Path(__file__).resolve().parent.parent / "web"
-app = FastAPI(title="Receipt", description="Cultural quality checks for recommendation agents.", version="0.5.0")
+app = FastAPI(title="Receipt", description="Cultural quality checks for recommendation agents.", version="0.5.1")
 app.mount("/static", StaticFiles(directory=WEB), name="static")
 app.add_middleware(RequestGuard)
 

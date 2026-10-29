@@ -52,7 +52,7 @@ def main():
     health = request("/api/health")
     assert health["ok"] and health["qloo_agent_enabled"] and not health["live_agent_enabled"]
     assert b"Receipt" in request("/")
-    assert request("/openapi.json")["info"]["version"] == "0.5.0"
+    assert request("/openapi.json")["info"]["version"] == "0.5.1"
     session = next(cookie for cookie in cookies if cookie.name == "receipt_session")
     assert session.secure and "HttpOnly" in session._rest and session._rest.get("SameSite") == "strict"
     for path in ("/.env", "/.git/config", "/data/live-workflows.json"):

@@ -70,3 +70,29 @@ def test_provider_metadata_and_contributions_are_validated_without_changing_affi
 def test_untrusted_images_never_reach_the_browser(url):
     row = QlooClient("placeholder")._scored({"entity_id": "p", "name": "P", "properties": {"image": {"url": url}}})
     assert row.image_url is None
+
+
+@pytest.mark.parametrize("personal,status,low_rate", [(.7, "supported", 0),
+    (.7 - 1e-9, "shared_taste", 1), (.7 + 1e-9, "supported", 0)])
+def test_batch_and_policy_agree_at_panel_threshold(monkeypatch, personal, status, low_rate):
+    from types import SimpleNamespace
+    from app import batch
+    from app.scope import Scope
+
+    panel = .6  # Observed live boundary: .7 - .6 is 0.09999999999999998.
+    decision = decide(personal_percentile=personal, city_percentile=None,
+                      panel_percentile=panel, policy=POLICIES["personalized"])
+    assert decision.status == status
+    comparison = SimpleNamespace(baseline={"p": None}, panel_metadata={"available": True},
+                                 ids=["p"], fingerprint="fixed", scope=Scope())
+    monkeypatch.setattr(batch, "prepare", lambda *args: comparison)
+    monkeypatch.setattr(batch, "audit", lambda **kwargs: {
+        "audit_id": "audit-example", "source": {"mode": "DEMO"},
+        "scoring_coverage": {"complete": True}, "comparison_fingerprint": "fixed",
+        "candidates": [{"status": decision.status, "personal_percentile": personal,
+                        "panel_lift": personal - panel, "taste_lift": None}],
+    })
+    result = batch.run_test_suite(agent={"name": "Boundary fixture"}, city="Denver", force_demo=True,
+        policy="personalized", profiles=[{"profile_id": name, "anchors": ["A", "B"], "recommendations": ["P"]}
+                                         for name in ["first", "second"]])
+    assert result["metrics"]["low_panel_lift_rate"] == low_rate

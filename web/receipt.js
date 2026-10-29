@@ -2,6 +2,10 @@
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 const lines = (id) => $(id).value.split("\n").map((value) => value.trim()).filter(Boolean);
+// Image failures do not bubble; capture also covers receipt cards added later.
+document.addEventListener("error", (event) => {
+  if (event.target instanceof HTMLImageElement && event.target.classList.contains("place-image")) event.target.remove();
+}, true);
 let current = null, revisionOf = null, issuedReceipt = null, batchResult = null;
 let busy = false, activeJob = null, view = "audit", liveConfigured = false;
 const contextInputs = ["anchors", "city", "policy", "demo", "category", "useVenue", "venueLabel", "venueLat", "venueLon", "venueRadius"];
@@ -262,9 +266,10 @@ $("approve").onclick = async () => {
     issuedReceipt = await post("/api/review/approve", confirmation);
     $("issuedText").textContent = "Confirmation recorded for " + issuedReceipt.approved_recommendations.length +
       " recommendation(s) · " + issuedReceipt.source.label + " · " + issuedReceipt.policy.name + ".";
-    $("receiptPreview").innerHTML = '<p class="receipt-caption">YOUR DINNER PICKS · ' + esc(issuedReceipt.city) + '</p>' +
+    $("receiptPreview").innerHTML = '<p class="receipt-caption">YOUR REVIEWED PICKS · ' + esc(issuedReceipt.city) + '</p>' +
       issuedReceipt.approved_recommendations.map((item) => '<article class="receipt-pick"><h4>✓ ' + esc(item.name) + '</h4>' + placeDetails(item) +
-      '<p>Taste rank ' + percentile(item.personal_percentile) + ' · Panel lift ' + lift(item.panel_lift) + '</p>' +
+      '<p>Taste rank ' + percentile(item.personal_percentile) + ' · ' +
+      (issuedReceipt.source.mode === 'DEMO' ? 'Synthetic lift ' + lift(item.taste_lift) : 'Panel lift ' + lift(item.panel_lift)) + '</p>' +
       '<p>' + esc(anchorNote(item.anchor_removals)) + '</p></article>').join("");
     $("receiptCode").textContent = JSON.stringify(issuedReceipt, null, 2);
     $("issued").classList.add("visible");
@@ -301,7 +306,6 @@ function renderAudit(data) {
     '<div class="score" title="Percentile rank within this comparison set, not a probability of enjoyment">' + percentile(item.personal_percentile) + '<span>Taste rank</span></div>' +
     '<div class="score">' + lift(data.source.mode === "DEMO" ? item.taste_lift : item.panel_lift) + '<span>' +
     (data.source.mode === "DEMO" ? "synthetic lift" : "Panel lift") + '</span></div></div>').join("");
-  document.querySelectorAll('.place-image').forEach((img) => img.addEventListener('error', () => img.remove(), {once:true}));
   const panel = data.reference_panel || {};
   $("panelDefinition").textContent = (panel.definition || "Reference panel unavailable for this source.") + " " +
     (panel.profiles || []).map((p) => p.label + ": " + p.anchors.join(" + ")).join("; ") + " " + (panel.reason || "");
@@ -407,7 +411,7 @@ function renderBatch(data) {
     ' taste profiles · ' + m.recommendation_count + ' submitted picks</p></div><button id="downloadBatch" class="button primary" type="button">Download report</button></div>' +
     '<div class="metric-grid">' +
     metric("Output variation (sensitivity)", m.sensitivity, "Independent of Qloo; output diversity does not establish quality.") +
-    (data.reference_panel?.available ? metric("Low panel lift", m.low_panel_lift_rate, "Fits above P60, but gains less than 10 points versus the declared three-profile panel. Not population popularity.") :
+    (data.reference_panel?.available ? metric("Low panel lift", m.low_panel_lift_rate, "Fit is at least P60, but lift is below 10 points versus the declared three-profile panel. Not population popularity.") :
     metric("Generic rate", m.generic_rate, m.generic_rate == null ? "Unavailable: no verified city-only affinity baseline." : "Clears fit but fails the policy's rank-lift bar. Qloo-relative.")) +
     metric("Mismatch rate", m.mismatch_rate, "Below the policy's fit bar in the fixed comparison set.") +
     metric("Unverified rate", m.unverified_rate, "Every unresolved or incompletely scored pick remains in the denominator.") +
@@ -422,7 +426,10 @@ function renderBatch(data) {
         groups.map(([s,label]) => { const count = profile.candidates.filter((x) => x.status === s).length; return count ? '<span class="bar-' + s + '" style="width:' + (100*count/total) + '%" title="' + esc(label) + ': ' + count + '">' + count + '</span>' : ''; }).join('') + '</div></div>';
     }).join('') + '<p class="micro">Green: supported · Amber: shared/generic · Red: mismatch · Grey: unverified/outside constraints</p></div>' +
     '<div class="report-table"><table><thead><tr><th>Captured profile</th><th>Supported</th><th>Shared with panel</th><th>Generic</th><th>Mismatch</th><th>Unverified / ineligible</th><th>Coverage</th></tr></thead><tbody>' + rows +
-    '</tbody></table></div><ul class="report-limits">' + data.limitations.map((note) => '<li>' + esc(note) + '</li>').join("") + '</ul>';
+    '</tbody></table></div><details class="limits"><summary>Reference panel and definitions</summary><p>' +
+    esc(data.reference_panel?.definition || 'Panel unavailable for this source.') + '</p><p>' +
+    esc((data.reference_panel?.profiles || []).map((p) => p.label + ': ' + p.anchors.join(' + ')).join('; ')) +
+    '</p></details><ul class="report-limits">' + data.limitations.map((note) => '<li>' + esc(note) + '</li>').join("") + '</ul>';
   $("downloadBatch").onclick = () => download(data, data.suite_id + ".json");
   $("batchReport").hidden = false;
   $("batchReport").scrollIntoView({behavior:"smooth", block:"start"});

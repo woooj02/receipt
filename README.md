@@ -102,6 +102,11 @@ check_deployment option exercises public HTTPS using actual Qloo calls.
 
 ## API integration
 
+Receipt needs a Qloo key on its server. An existing LLM or coding agent can send
+proposals to Receipt and revise from its critique using that agent's own model
+access; no additional LLM key is required by Receipt. The optional embedded model
+adapter below is a separate convenience.
+
 POST /api/agent/audit:
 
 ```json

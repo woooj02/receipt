@@ -31,6 +31,12 @@ POLICIES = {
     "personalized": Policy("Distinctive taste", 0.60, 0.10, False, 0.10),
 }
 MIN_UNIVERSE_SIZE = 10
+LIFT_TOLERANCE = 1e-12
+
+
+def below_lift_bar(value: float, minimum: float) -> bool:
+    """Use the same inclusive lift threshold in decisions and aggregate reports."""
+    return value + LIFT_TOLERANCE < minimum
 
 
 @dataclass(frozen=True)
@@ -125,14 +131,14 @@ def decide(
     if personal_percentile < policy.minimum_personal_percentile:
         return Decision("mismatch", personal_percentile, city_percentile, taste_lift, "Its personalized rank is below this policy’s cultural-fit bar.")
     if policy.minimum_panel_lift is not None:
-        if personal_percentile - panel_percentile + 1e-12 < policy.minimum_panel_lift:
+        if below_lift_bar(personal_percentile - panel_percentile, policy.minimum_panel_lift):
             return Decision("shared_taste", personal_percentile, city_percentile, taste_lift, "It fits, but its rank is not sufficiently above the declared music panel under this strictness setting.")
         return Decision("supported", personal_percentile, city_percentile, taste_lift, "It clears both the taste-match bar and the declared reference-panel lift bar.")
     if city_percentile is None:
         return Decision("supported", personal_percentile, None, None, "It clears the personalized cultural-fit bar; city baseline was unavailable.")
 
     assert taste_lift is not None
-    if taste_lift + 1e-12 < policy.minimum_taste_lift:
+    if below_lift_bar(taste_lift, policy.minimum_taste_lift):
         return Decision("generic", personal_percentile, city_percentile, taste_lift, "It clears the fit bar but has insufficient measured rank lift. This alone does not establish that it is a bad recommendation.")
     return Decision("supported", personal_percentile, city_percentile, taste_lift, "It clears both personalized-fit and Taste Lift bars.")
 

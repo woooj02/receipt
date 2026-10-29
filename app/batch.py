@@ -5,7 +5,7 @@ from __future__ import annotations
 import secrets
 
 from .context import prepare
-from .evaluation import CapturedAgentRun, sensitivity
+from .evaluation import CapturedAgentRun, below_lift_bar, sensitivity
 from .qloo import normalize_name
 from .receipt import AuditError, audit
 
@@ -59,7 +59,7 @@ def run_test_suite(*, agent, city, profiles, force_demo, policy="standard", scop
             "generic_rate": generic / total if total and has_baseline else None,
             "generic_rate_available": has_baseline,
             "low_panel_lift_rate": sum(row["personal_percentile"] is not None and row["personal_percentile"] >= .60
-                                        and row["panel_lift"] is not None and row["panel_lift"] < .10
+                                        and row["panel_lift"] is not None and below_lift_bar(row["panel_lift"], .10)
                                         for row in candidates) / total if comparison.panel_metadata.get("available") else None,
             "panel_scored_count": sum(row["panel_lift"] is not None for row in candidates),
             "panel_definition": "Share of all picks with fit >= P60 and lift below +10 points versus the declared three-profile music panel; not a population generic rate.",
