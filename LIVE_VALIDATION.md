@@ -2,6 +2,24 @@
 
 Checked October 28–29, 2026, Denver time. No paid model calls were made.
 
+## Current self-audit — v0.5.1, October 29
+
+- Reproduced a boundary inconsistency: a +10-point pick could pass its audit but
+  count as low panel lift in the batch. Decisions and reports now share the same
+  inclusive comparison with 1e-12 tolerance. Below/at/above-threshold tests pass.
+- Reproduced a broken image persisting in the visual receipt. A capture-phase
+  handler now covers images added after audit rendering, including confirmed cards.
+  Browser regression uses a real missing-image response at both layout widths.
+- Synthetic receipts show their synthetic lift, and batch reports expose the
+  reference-panel members/definition without requiring a JSON download.
+- 109 offline tests, clean dependency checks and browser regressions pass.
+  Hosted live audit/revision/confirmation/download, rules-agent and batch journeys
+  pass at 1440px and 390px, including receipt-image recovery.
+- A fresh GitHub runner passes installation, dependency checks, 109 tests and
+  public HTTPS/Qloo workflows. [Self-audit release check](https://github.com/woooj02/receipt/actions/runs/40952685074).
+- Existing LLM clients can use Receipt with their own model access; a separate
+  embedded-model key is not required for the core audit/revision API.
+
 ## Verified against the actual Qloo service
 
 - The saved server-side key authenticates against the hackathon host.
