@@ -51,6 +51,8 @@ Verified-only requires a baseline and therefore holds results when it is absent.
   revision rules; no LLM and no claim that ratings measure popularity.
   It follows city/category/radius, does not interpret free-text task notes, and
   rechecks any changed list with the same evaluator.
+- scripted: synthetic catalog and deterministic workflow example.
+- live: optional model adapter; requires a separate key, model and spending permission.
 
 ## Audit changes — v0.5.0, October 29
 
@@ -90,9 +92,6 @@ Verified-only requires a baseline and therefore holds results when it is absent.
   An actual rsync fixture regression, redeploy and hosted workflow checks pass.
 - A new private 2:10 recording uses actual hosted Qloo evidence and four actual
   ratings-agent control outputs. It is not an LLM study and has not been uploaded.
-- scripted: synthetic catalog and deterministic workflow example.
-- live: optional model adapter; requires a separate key, model and spending permission.
-
 ## Public release verification — October 29
 
 - Approved deployment: https://receipt.91.99.162.43.sslip.io/.
