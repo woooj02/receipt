@@ -52,7 +52,7 @@ def main():
     health = request("/api/health")
     assert health["ok"] and health["qloo_agent_enabled"] and not health["live_agent_enabled"]
     assert b"Receipt" in request("/")
-    assert request("/openapi.json")["info"]["version"] == "0.4.0"
+    assert request("/openapi.json")["info"]["version"] == "0.5.0"
     session = next(cookie for cookie in cookies if cookie.name == "receipt_session")
     assert session.secure and "HttpOnly" in session._rest and session._rest.get("SameSite") == "strict"
     for path in ("/.env", "/.git/config", "/data/live-workflows.json"):
@@ -68,6 +68,8 @@ def main():
     }
     first = run("audit", dict(brief, candidates=["Work & Class", "Tavernetta", "Receipt Validation Imaginary Bistro"]))
     assert first["source"]["mode"] == "LIVE" and first["scoring_coverage"]["complete"]
+    assert first["reference_panel"]["available"]
+    assert any(row["qloo_contributions"] and row["place"]["address"] for row in first["candidates"])
     assert not first["baseline_available"] and not first["approval_eligible"]
     assert first["candidates"][-1]["status"] == "unverified"
     names = [row["name"] for row in first["repairs"][:2]]
@@ -85,7 +87,7 @@ def main():
     print(f"PASS: live audit ({first['scoring_coverage']['scored']} scored), frozen revision and exact-snapshot confirmation", flush=True)
 
     agent_brief = {key: value for key, value in brief.items() if key != "demo"}
-    agent = run("agent", dict(agent_brief, mode="qloo", max_rounds=3))
+    agent = run("agent", dict(agent_brief, mode="qloo", max_rounds=3, policy="personalized"))
     assert agent["source"]["mode"] == "LIVE" and "rules-based, no LLM" in agent["agent"]["label"]
     assert 1 <= len(agent["rounds"]) <= 3 and not agent["approval_recorded"]
     print(f"PASS: real-data rules agent, {len(agent['rounds'])} round(s), no automatic approval", flush=True)
@@ -102,6 +104,7 @@ def main():
     })
     assert batch["source"]["mode"] == "LIVE" and batch["profile_count"] == 2
     assert batch["metrics"]["generic_rate"] is None
+    assert batch["metrics"]["low_panel_lift_rate"] is not None
     assert len({profile["comparison_fingerprint"] for profile in batch["profiles"]}) == 1
     print("PASS: two constructed profiles, shared comparison set, unavailable generic rate stays unavailable", flush=True)
 

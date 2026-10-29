@@ -34,9 +34,6 @@ class DemoClient:
     def city_reference_places(self, city):
         return list(self.catalog.values())
 
-    def taste_tags(self, anchor_ids):
-        return ["Synthetic tag: cinematic", "Synthetic tag: playful"]
-
     def score_places(self, anchor_ids, candidate_ids, city):
         return self._scores(candidate_ids, sorted(anchor_ids))
 

@@ -1,24 +1,86 @@
 # Receipt
 
-Cultural quality checks for recommendation agents.
+**AI concierges know good places. Receipt checks whether they're good for you.**
 
-Receipt evaluates proposed places against cultural tastes, explains rank sensitivity,
-returns a structured critique, and checks the agent's revision. Its test suite
-compares captured recommendations across taste profiles using one frozen universe.
+[Try the live app](https://receipt.91.99.162.43.sslip.io/) ·
+[Judge walkthrough](submission/testing-instructions.md) ·
+[Live verification](LIVE_VALIDATION.md)
 
-**Try it:** [Live application](https://receipt.91.99.162.43.sslip.io/) ·
-[Public MIT source](https://github.com/woooj02/receipt) ·
-[Judge walkthrough](submission/testing-instructions.md).
-Real Qloo audits, revisions, receipts and rules-based agent runs are deployed.
-The city-only affinity baseline is unavailable; Taste Lift stays disabled.
-Optional paid-model runs and a real-model study have not been completed.
+Receipt checks an agent's restaurant picks against the person's music, films,
+books and shows using Qloo. It returns a critique, tests the changed list against
+the same comparison set, and attaches a reviewed receipt to the result.
 
-For measured behavior, integration findings and release checks, read
-[LIVE_VALIDATION.md](LIVE_VALIDATION.md). Internal audit/planning documents stay local.
+Built for ticketing, travel and concierge teams that want an inspectable check
+between a recommendation agent and its customers.
+
+![Receipt's agent workflow using explicitly labelled synthetic data](docs/workbench.png)
+
+*Interface preview uses synthetic data. The hosted live example calls Qloo.*
+
+## The live moment
+
+For Kendrick Lamar + Everything Everywhere All at Once near Mission Ballroom,
+the generic ratings agent initially selected three highly rated places. Under
+the **Distinctive taste** setting, one passed and two had insufficient lift
+against our declared reference panel. The agent kept Guard and Grace, replaced
+the other two, and all three passed the next audit. No failed draft was planted.
+
+Those two picks cleared the basic fit bar. This demonstrates the selected
+panel-relative rule, not that the restaurants are bad or that enjoyment improved.
+
+## Three ways to use it
+
+1. **Audit a list:** enter things the person loves and an agent's proposed places.
+   See photos, addresses, taste ranks, Qloo contributions and venue distances.
+   Apply suggestions in one click or edit manually; every change gets a new audit.
+2. **Watch an agent revise:** proposal → critique → changed list → fresh audit.
+   The live generic ratings agent uses real Qloo data and explicit rules, without
+   an LLM. It stops immediately if the first draft passes. A separately configured
+   model adapter is optional; the synthetic example is labelled.
+3. **Test an agent:** import 2–20 captured outputs. Compare variation, failure and
+   coverage measures across one shared set, with a stacked bar for every profile.
+   Caller-supplied capture provenance is not independently verified.
+
+Passing results can receive browser confirmation and a visual/JSON receipt.
+Agents cannot confirm their own results through the agent endpoint.
+
+## How the check works
+
+```mermaid
+flowchart LR
+  A[Agent's proposed places] --> R[Receipt]
+  T[Things the person loves] --> R
+  R --> Q[Qloo: resolve and score identical place IDs]
+  Q --> C[Fit, panel comparison, contributions and omission tests]
+  C --> D[Structured critique]
+  D --> A
+  C --> H[Review exact result]
+  H --> P[Visual and JSON receipt]
+```
+
+- A frozen set contains up to 50 taste-independent city references plus eligible
+  proposed picks. Every ID needs a finite affinity before ranks are published.
+- Category and straight-line radius checks use returned tags and coordinates.
+- **Taste rank** is a mid-rank percentile within this set, not an enjoyment probability.
+- **Panel lift** is personal percentile minus the mean percentile of three fixed,
+  equally weighted profiles: Taylor Swift + Beyoncé; Metallica + Iron Maiden;
+  J Balvin + Shakira. Version: contrasting-music-v2. Same IDs, filters and affinity
+  field throughout. All three profiles must have complete scores.
+- This curated music panel is **not a representative crowd or popularity estimate**.
+  It can overlap the person's tastes. Changing its membership changes the metric.
+- **Taste match** requires rank ≥ P60. **Distinctive taste** additionally requires
+  panel lift ≥ +10 percentile points. These are prototype thresholds.
+- The original city-only Taste Lift/generic rate remain unavailable on the live
+  service: no-interest responses have no affinity. They are separate fields.
+  **Verified-only** still holds when that original baseline is unavailable.
+- Qloo contributions show provider-reported influence. Removing one taste shows
+  rank sensitivity. Neither establishes why a person will enjoy a place.
+- Revisions freeze tastes, policy, city, scope, panel and place IDs. A passing
+  re-audit is another check by the same evaluator, not independent validation.
 
 ## Run locally
 
-Requires Python 3.12. From a fresh checkout:
+Python 3.12:
 
 ```bash
 ./run.sh setup
@@ -26,137 +88,70 @@ cp -n .env.example .env
 ./run.sh
 ```
 
-Open http://127.0.0.1:8132. Without a Qloo key the evaluator uses an explicitly
-labelled synthetic catalog. **Load synthetic sample** always uses synthetic evidence.
-With a key, **Run live Denver example** uses real Qloo evidence for a hand-entered
-list near Mission Ballroom. The list is not a captured model response.
-
-## Three workspaces
-
-1. **Audit a list:** 2–5 anchors, 1–6 places, a city, policy, restaurant category,
-   and optional venue coordinates/radius. Every place stays in the result.
-2. **Watch an agent revise:** proposal → critique → revision → new audit. Choose
-   a live Qloo discovery agent with explicit rules and no LLM, the labelled
-   synthetic demonstration, or a separately configured model. Up to three rounds;
-   a passing first draft stops immediately. The rules agent follows structured
-   city/category/radius constraints and does not interpret free-text task notes.
-3. **Test an agent:** import captured-output JSON or load the 20-capture synthetic
-   sample. Inspect metrics, repeat controls, per-profile coverage, and download
-   the report. The sample has 10 taste profiles with two captures each.
-
-Passing results can receive explicit browser confirmation and a JSON receipt.
-Suggestions and agent-generated scores cannot approve themselves.
-
-## What the evaluator measures
-
-- One comparison set contains up to 50 city reference places plus resolved agent
-  choices. Scoring paginates the same complete ID filter.
-- All comparison places need finite scores before percentiles are published.
-- Batch profiles share that same set. Revisions retain tastes, policy, city,
-  category, radius, and universe. A new outside place needs a fresh audit.
-- Taste Lift compares personalized and city-only percentiles. It is unavailable
-  until live verification supports the baseline and the server explicitly enables it.
-- Generic means the place clears fit but fails the configured rank-lift bar.
-  It can still be an excellent broadly liked place.
-- Anchor removal measures rank sensitivity, not a causal reason for enjoyment.
-- Sensitivity is mean pairwise Jaccard distance between supplied recommendation
-  sets. Repeat-control variation helps expose model randomness. Neither proves quality.
-- Mismatch, unverified, and constraint failures retain all picks in the denominator.
-
-Restaurant tags are resolved through documented tag search, and venue radius
-uses straight-line distance from a supplied point. Missing tags or coordinates
-stay unverified. Hours, road travel time, safety, price and availability are unknown.
-See [Qloo tag search](https://docs.qloo.com/reference/search-tags) and
-[Insights parameters](https://docs.qloo.com/reference/insights-api-deep-dive).
-
-## API
-
-POST /api/agent/audit accepts:
-
-```json
-{
-  "anchors": ["Kendrick Lamar", "Everything Everywhere All at Once"],
-  "candidates": ["Official place name", "Another official place name"],
-  "city": "Denver, Colorado",
-  "policy": "standard",
-  "constraints": {"category": "restaurant", "venue": null},
-  "demo": false
-}
-```
-
-Retain the session cookie. Include revision_of with a prior audit_id to test a
-changed list. Agent endpoints cannot confirm receipts.
-
-POST /api/agent/run accepts anchors, city, goal, policy, constraints, mode
-(scripted, qloo, or live), and max_rounds (1–3). qloo uses actual Qloo discovery
-and revision rules without model calls. No result is automatically confirmed.
-
-POST /api/test-suite accepts agent_name, agent_version, prompt_version, a
-timezone-aware captured_at timestamp, city, and 2–20 captures in profiles.
-Each capture has a unique profile_id, anchors, recommendations, and optional
-control_group. Members of a repeat-control group must have identical tastes.
-Capture provenance supplied by a caller is explicitly unverified.
-The [import example](examples/captured-output.json) uses hand-entered validation
-inputs with real Qloo scoring; it is not a captured model response or benchmark.
-
-For long work, POST the same body to /api/jobs/audit, /api/jobs/agent or
-/api/jobs/batch. Poll GET /api/jobs/{job_id}, or POST
-/api/jobs/{job_id}/cancel. Jobs are private to the browser session.
-
-## Keys and controlled model use
-
-QLOO_API_KEY enables the live evaluator. Run the private probe before enabling
-QLOO_BASELINE_VERIFIED=1. The probe never changes that setting automatically.
-Current live probes return no city-only affinity values. Leave the setting at 0;
-generic rate and Taste Lift remain unavailable. Standard can check fit alone;
-Verified-only holds results without a baseline. See [live validation](LIVE_VALIDATION.md).
-
-Optional model use additionally requires OPENAI_API_KEY, RECEIPT_LLM_MODEL and
-RECEIPT_ALLOW_LLM_CALLS=1. These are disabled/blank in the example environment.
-Only enable them with authorized API spending. The adapter uses strict JSON
-outputs, local validation, a fixed API host, no automatic generation retry, and
-bounded rounds. See [official Structured Outputs guidance](https://developers.openai.com/api/docs/guides/structured-outputs).
-
-After explicit model configuration, ./run.sh capture --input
-examples/study-input.json --repeat 2 records 20 real outputs with repeat controls.
-Captured datasets and probe reports go into ignored data/ files with owner-only
-permissions. The real Qloo workflow is validated; no real-model study is completed.
-
-## Verification
+Open http://127.0.0.1:8132/. Put QLOO_API_KEY in the local .env for live evidence.
+The key stays server-side. Without it, the app uses clearly labelled synthetic data.
 
 ```bash
 ./run.sh test
 ./venv/bin/python scripts/check_browser.py
 ```
 
-The browser check uses local Chrome/Chromium and an isolated temporary profile.
-It checks all three workspaces at 1440px and 390px and makes no provider calls.
-Add --screenshots to retain local previews in /tmp.
+The browser check uses an isolated Chrome profile at 1440px and 390px with synthetic
+data. GitHub Actions installs a fresh checkout and runs offline tests. Its manual
+check_deployment option exercises public HTTPS using actual Qloo calls.
 
-GitHub Actions installs the public source and runs the offline tests. Its manual
-check_deployment option also exercises the hosted HTTPS workflows using constructed
-inputs and real Qloo calls. Run that check only when consuming the app's Qloo
-allowance is intended: python scripts/check_deployment.py --base-url
-https://receipt.91.99.162.43.sslip.io (as one shell line).
+## API integration
 
-## Runtime and deployment
+POST /api/agent/audit:
 
-Two workers, a four-run queue, 180-second budgets, cancellation, a 128-KB body
-limit, per-address work limits and bounded provider retry protect the demo.
-The private Qloo cache holds up to 512 entries for five minutes.
-Per-process daily provider ceilings reset on process restart; they are not a
-substitute for persistent provider-side billing limits.
+```json
+{
+  "anchors": ["Kendrick Lamar", "Everything Everywhere All at Once"],
+  "candidates": ["Work & Class", "Tavernetta"],
+  "city": "Denver, Colorado",
+  "policy": "personalized",
+  "constraints": {"category": "restaurant", "venue": null},
+  "demo": false
+}
+```
 
-Use one server process: audit ownership, confirmation tokens, queues and budgets
-are in memory. Audits expire after 30 minutes. Confirmation records an explicit
-action and evidence hash; reviewer identity is not authenticated.
+Keep the session cookie. Include revision_of with a prior audit_id to check a
+changed list. POST /api/agent/run accepts anchors, city, goal, policy, constraints,
+mode (qloo, scripted, live) and max_rounds (1–3).
 
-The release uses deploy.sh on the existing Hetzner host: one native Python process,
-systemd and nginx HTTPS. Hosted Chrome workflows pass at 1440px and 390px.
-Dockerfile provides a separate non-root single-worker recipe. Local Docker socket
-access was denied, so the image is not build-verified.
-See [LIVE_VALIDATION.md](LIVE_VALIDATION.md) for release evidence and limitations.
+POST /api/test-suite accepts agent_name, agent_version, prompt_version, a
+timezone-aware captured_at timestamp, city and 2–20 profiles. Each profile has
+profile_id, anchors, recommendations and optional control_group.
+[Import example](examples/captured-output.json): hand-entered inputs, not model captures.
+
+For background work, POST the same body to /api/jobs/audit, /api/jobs/agent or
+/api/jobs/batch; poll GET /api/jobs/{job_id}. POST /api/jobs/{job_id}/cancel cancels.
+Interactive schemas are available at /docs.
+
+Optional model calls require OPENAI_API_KEY, RECEIPT_LLM_MODEL and
+RECEIPT_ALLOW_LLM_CALLS=1. They remain disabled on the hosted demo. The capture
+command records real model outputs only after explicit configuration; no real
+LLM study is claimed. The qloo agent's free-text task is informational, not interpreted.
+
+## Limits and operations
+
+Hours, bookings, safety, accessibility, road travel time and current prices are
+not checked. Venue ratings/price levels are returned metadata, not promises.
+
+One process owns in-memory sessions, jobs and review records. Restart loses state.
+Two workers, four admitted runs, 180-second budgets, body/address limits, a private
+five-minute cache and per-process provider ceilings bound the demo. Ceilings reset
+on restart and are not persistent billing caps. Exhaustion points to the labelled
+synthetic sample. Review confirmation does not authenticate reviewer identity.
+
+Native hosting uses systemd/nginx HTTPS through deploy.sh. The separate non-root
+Docker recipe is not build-verified. Internal planning and audit documents, keys,
+private provider reports and recording assets stay out of Git and deployment.
+
+Built with Python/FastAPI, Pydantic and plain JavaScript on a local FastAPI starter.
+Receipt's evaluator, scope checks, agent loop, review flow and report workspace
+are the project implementation.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+[MIT](LICENSE).

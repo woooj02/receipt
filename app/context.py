@@ -1,6 +1,7 @@
 """One frozen comparison set shared by profiles, revisions, and the baseline."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from threading import RLock
 import hashlib
 import json
 
@@ -21,6 +22,9 @@ class Comparison:
     baseline_reason: str
     fingerprint: str
     scope: Scope
+    panel: dict = field(default_factory=dict)
+    panel_metadata: dict = field(default_factory=dict)
+    resolution_lock: object = field(default_factory=RLock, repr=False)
 
     @property
     def ids(self):
@@ -32,10 +36,10 @@ class Comparison:
 
     def resolve(self, name):
         key = normalize_name(name)
-        if key not in self.resolutions:
-            # A new revision pick is resolved but cannot change the frozen set.
-            self.resolutions[key] = self.client.resolve_place(name, self.city)
-        return self.resolutions[key]
+        with self.resolution_lock:
+            if key not in self.resolutions:
+                self.resolutions[key] = self.client.resolve_place(name, self.city)
+            return self.resolutions[key]
 
     def eligibility(self, entity):
         return assess(entity, self.scope, getattr(self.client, "restaurant_tag", None))
@@ -65,8 +69,11 @@ def prepare(city, candidates, force_demo=False, scope=None):
             reason = "Complete baseline over the identical comparison set." if any(value is not None for value in baseline.values()) else "Baseline is incomplete or the universe is too small; Taste Lift is unavailable."
         except QlooError:
             reason = "City baseline request failed; Taste Lift is unavailable."
-    fingerprint = hashlib.sha256(json.dumps({"city": normalize_name(city), "ids": ids, "constraints": scope.public()}, sort_keys=True).encode()).hexdigest()
-    return Comparison(city, client, universe, resolutions, baseline, reason, fingerprint, scope)
+    from .reference_panel import build_panel
+    panel, panel_metadata = build_panel(client, ids, city)
+    fingerprint = hashlib.sha256(json.dumps({"city": normalize_name(city), "ids": ids, "constraints": scope.public(),
+                                            "reference_panel": panel_metadata}, sort_keys=True).encode()).hexdigest()
+    return Comparison(city, client, universe, resolutions, baseline, reason, fingerprint, scope, panel, panel_metadata)
 
 
 def score_map(rows, ids):

@@ -207,7 +207,7 @@
     <a class="brand" href="/" aria-label="Receipt home"><span class="mark">✓</span>receipt</a>
     <div class="top-meta">
       <span class="badge"><span class="dot" id="statusDot"></span><span id="mode">Checking service…</span></span>
-      <span class="badge">Cultural QA for agents</span>
+      <span class="badge">Better picks. Visible proof.</span>
     </div>
   </header>
 
@@ -216,11 +216,12 @@
       <div>
         <p class="eyebrow">QUALITY CONTROL FOR RECOMMENDATION AGENTS</p>
         <h1 id="hero-heading">Make every recommendation <em>earn its receipt.</em></h1>
-        <p class="lede">Test whether an agent’s place recommendations fit the person. Inspect the evidence, watch it revise, and run a whole set of taste profiles.</p>
+        <p class="lede">Your AI concierge knows a good restaurant. Does it know a good restaurant for <em>you</em>? Receipt checks the picks against what you love, then asks the agent to fix the misses.</p>
+        <button class="button primary hero-action" id="heroLiveExample" type="button" hidden>Try the live Denver example →</button>
         <div class="proof" aria-label="Product principles">
           <span>Qloo-backed cultural fit</span>
-          <span>Explicit review confirmation</span>
-          <span>No invented reasons</span>
+          <span>Music and films → dinner</span>
+          <span>See the agent correct itself</span>
         </div>
       </div>
       <div class="workflow" aria-label="Audit workflow">
@@ -235,9 +236,8 @@
         <div>
           <p class="eyebrow">INTERACTIVE AGENT TOOL</p>
           <h2 id="audit-heading">Run a taste audit.</h2>
-          <p class="subtle">Give Receipt a person’s cultural anchors and the places another agent wants to recommend.</p>
+          <p class="subtle">Start with things they love and the places an agent recommends.</p>
         </div>
-        <p class="source-note">Qloo affinity is a relative cultural-fit signal, not a promise that someone will like a place.</p>
       </div>
       <div class="tabs" role="tablist" aria-label="Receipt workspace">
         <button id="tabAudit" role="tab" aria-selected="true" aria-controls="auditWorkspace" type="button">01 · Audit a list</button>
@@ -248,18 +248,18 @@
       <form class="form-card" id="auditForm">
         <div class="form-head"><strong id="formTitle">Recommendation audit</strong><span id="formHint">Review every proposed place.</span></div>
         <div class="form-grid">
-          <div class="field" id="candidateField">
-            <label for="anchors">Cultural anchors <span>one per line · 2 to 5</span></label>
+          <div class="field">
+            <label for="anchors">Things they love <span>artists, films, books or shows · 2 to 5</span></label>
             <textarea id="anchors" required placeholder="Kendrick Lamar&#10;Everything Everywhere All at Once&#10;The Bear"></textarea>
           </div>
-          <div class="field">
+          <div class="field" id="candidateField">
             <label for="candidates">Agent’s proposed places <span>one per line · up to 6</span></label>
             <textarea id="candidates" required placeholder="A proposed restaurant&#10;Another proposed restaurant&#10;One more place"></textarea>
           </div>
           <div class="field" id="agentField" hidden>
             <label for="agentGoal">The agent’s task</label>
             <textarea id="agentGoal" maxlength="1000">Find pre-show dinner for this fan, using the supplied location and tastes.</textarea>
-            <label class="agent-select" for="agentMode">AGENT SOURCE <select id="agentMode"><option value="scripted">Scripted workflow demo</option><option value="live" disabled>Live model · not configured</option><option value="qloo" disabled>Live Qloo discovery · rules-based</option></select></label>
+            <label class="agent-select" for="agentMode">AGENT SOURCE <select id="agentMode"><option value="scripted">Scripted workflow demo</option><option value="live" disabled>Live model · not configured</option><option value="qloo" disabled>Generic ratings agent · real Qloo data</option></select></label>
             <p class="micro" id="agentSourceHelp">Scripted mode uses synthetic places and scores. A live model requires explicit server configuration.</p>
           </div>
         </div>
@@ -276,8 +276,8 @@
         </div>
         <div class="form-bottom">
           <div class="city-field"><label for="city">CITY</label><input id="city" type="text" value="Denver, Colorado" required></div>
-          <div class="city-field"><label for="policy">POLICY</label><select id="policy"><option value="standard">Standard</option><option value="verified_only">Verified-only</option></select></div>
-          <label class="check"><input id="demo" type="checkbox"> Run synthetic demo evidence</label>
+          <div class="city-field"><label for="policy">STRICTNESS</label><select id="policy"><option value="standard">Taste match</option><option value="personalized">Distinctive taste · reference panel</option><option value="verified_only">Verified-only · city baseline</option></select></div>
+          <label class="check" id="demoChoice"><input id="demo" type="checkbox"> Use synthetic sample data</label>
           <button class="button primary" id="auditButton" type="submit">Audit recommendations <span aria-hidden="true">→</span></button>
         </div>
       </form>
@@ -301,7 +301,7 @@
               <div class="candidate-list" id="candidateList"></div>
             </article>
             <article class="repair" id="repair" hidden>
-              <div class="repair-head"><div><h3>Suggested alternatives</h3><p>Send this critique to the source agent. Suggestions are not passed repairs.</p></div><button class="button ghost tiny" id="beginRevision" type="button">Start re-audit</button></div>
+              <div class="repair-head"><div><h3>Suggested alternatives</h3><p>Keep the supported picks and test a changed list.</p></div><div class="repair-actions"><button class="button dark tiny" id="applySuggestions" type="button">Apply suggestions &amp; re-audit →</button><button class="button ghost tiny" id="beginRevision" type="button">Edit revised list</button></div></div>
               <div class="repair-list" id="repairList"></div>
             </article>
             <article class="approval" id="approval">
@@ -311,6 +311,7 @@
             <article class="issued" id="issued">
               <div class="issued-head"><span class="mark">✓</span><h3>Decision receipt issued</h3></div>
               <p id="issuedText"></p>
+              <div id="receiptPreview" class="receipt-preview"></div>
               <details class="receipt-data"><summary>Inspect receipt JSON</summary><code id="receiptCode"></code></details>
               <button class="button ghost tiny" id="downloadReceipt" type="button">Download receipt</button>
             </article>
@@ -326,7 +327,8 @@
             </div>
           </aside>
         </div>
-        <details class="limits"><summary>What this result can establish</summary><ul id="limitsList"></ul></details>
+        <details class="limits"><summary>How the reference panel works</summary><div id="panelDefinition"></div></details>
+        <details class="limits"><summary>Limits and definitions</summary><ul id="limitsList"></ul></details>
       </section>
       </section>
 

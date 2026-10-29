@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
+from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from .runtime import PrivateCache, remaining
@@ -62,11 +63,17 @@ class Entity:
     latitude: float | None = field(default=None, kw_only=True)
     longitude: float | None = field(default=None, kw_only=True)
     tags: tuple[str, ...] = field(default=(), kw_only=True)
+    address: str | None = field(default=None, kw_only=True)
+    image_url: str | None = field(default=None, kw_only=True)
+    business_rating: float | None = field(default=None, kw_only=True)
+    price_level: int | None = field(default=None, kw_only=True)
+    keywords: tuple[str, ...] = field(default=(), kw_only=True)
 
 
 @dataclass(frozen=True)
 class ScoredEntity(Entity):
     affinity: float | None
+    contributions: tuple[tuple[str, float], ...] = field(default=(), kw_only=True)
 
 
 class QlooClient:
@@ -109,6 +116,10 @@ class QlooClient:
         # Enable only after the live probe verifies complete, comparable scores.
         return os.environ.get("QLOO_BASELINE_VERIFIED") == "1"
 
+    @property
+    def reference_panel_enabled(self):
+        return os.environ.get("RECEIPT_REFERENCE_PANEL", "1") == "1"
+
     def resolve_anchor(self, name: str) -> Entity | None:
         return self._resolve(name, ANCHOR_TYPES)
 
@@ -116,18 +127,6 @@ class QlooClient:
         # A city is an ambiguity aid during search. The final Insights call also
         # applies the city as a geospatial filter before any score is accepted.
         return self._resolve(name, "urn:entity:place", city=city)
-
-    def taste_tags(self, anchor_ids: list[str]) -> list[str]:
-        payload = self._get(
-            "/v2/insights",
-            {
-                "filter.type": "urn:tag",
-                "signal.interests.entities": ",".join(anchor_ids),
-                "take": "8",
-            },
-        )
-        tags = self._results(payload, "tags")
-        return [self._name(tag) for tag in tags if self._name(tag)][:6]
 
     def score_places(
         self, anchor_ids: list[str], candidate_ids: list[str], city: str
@@ -191,20 +190,6 @@ class QlooClient:
             if len(rows) < 50:
                 break
         return list(found.values())
-
-    def discover_places(self, anchor_ids: list[str], city: str) -> list[ScoredEntity]:
-        payload = self._get(
-            "/v2/insights",
-            {
-                "filter.type": "urn:entity:place",
-                "signal.interests.entities": ",".join(anchor_ids),
-                **self._place_filters(city),
-                "filter.exists": "properties.image",
-                "feature.explainability": "true",
-                "take": "10",
-            },
-        )
-        return [self._scored(item) for item in self._results(payload, "entities")]
 
     def _resolve(self, name: str, entity_types: str, city: str | None = None) -> Entity | None:
         params = {"query": name, "types": entity_types, "take": "8"}
@@ -314,8 +299,17 @@ class QlooClient:
             tag_id = (tag.get("tag_id") or tag.get("id")) if isinstance(tag, dict) else tag
             if isinstance(tag_id, str) and tag_id.startswith("urn:tag:"):
                 tag_ids.append(tag_id)
+        image = properties.get("image")
+        image_url = safe_image_url(image.get("url")) if isinstance(image, dict) else None
+        keywords = properties.get("keywords")
+        rating = _bounded_number(properties.get("business_rating"), 5)
+        price = properties.get("price_level")
         return Entity(entity_id, name, str(entity_type), latitude=latitude, longitude=longitude,
-                      tags=tuple(sorted(set(tag_ids)))) if entity_id and name else None
+                      tags=tuple(sorted(set(tag_ids))), address=_text(properties.get("address"), 300),
+                      image_url=image_url, business_rating=rating,
+                      price_level=price if type(price) is int and 0 <= price <= 4 else None,
+                      keywords=tuple(k[:80] for k in keywords[:8] if isinstance(k, str))
+                      if isinstance(keywords, list) else ()) if entity_id and name else None
 
     def _scored(self, item: dict[str, Any]) -> ScoredEntity:
         entity = self._entity(item)
@@ -329,7 +323,37 @@ class QlooClient:
             affinity = None
         if affinity is not None and (not math.isfinite(affinity) or not 0 <= affinity <= 1 or isinstance(raw_affinity, bool)):
             affinity = None
-        return ScoredEntity(**entity.__dict__, affinity=affinity)
+        block = query.get("explainability")
+        signals = block.get("signal.interests.entities", []) if isinstance(block, dict) and not block.get("warning") else []
+        contributions = []
+        for row in signals if isinstance(signals, list) else []:
+            if not isinstance(row, dict):
+                continue
+            score = _bounded_number(row.get("score"), 1)
+            if isinstance(row.get("entity_id"), str) and score is not None:
+                contributions.append((row["entity_id"], score))
+        return ScoredEntity(**entity.__dict__, affinity=affinity, contributions=tuple(contributions))
+
+
+def safe_image_url(value):
+    if not isinstance(value, str) or len(value) > 1500:
+        return None
+    try:
+        parsed = urlsplit(value)
+        return value if (parsed.scheme == "https" and parsed.hostname == "images.qloo.com"
+                         and parsed.port in (None, 443) and not parsed.username and not parsed.password) else None
+    except ValueError:
+        return None
+
+
+def _text(value, limit):
+    return value[:limit] if isinstance(value, str) and value.strip() else None
+
+
+def _bounded_number(value, maximum):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    return float(value) if math.isfinite(value) and 0 <= value <= maximum else None
 
 
 def normalize_name(value: str) -> str:

@@ -144,7 +144,7 @@ def test_qloo_rules_agent_revises_real_contract_data_without_model_calls(monkeyp
             "constraints": {"category": "restaurant"}})
         assert response.status_code == 200, response.text
         result = response.json()
-        assert result["agent"]["label"] == "LIVE QLOO — rules-based, no LLM"
+        assert result["agent"]["label"] == "LIVE QLOO — generic ratings agent; rules-based, no LLM"
         assert result["source"]["mode"] == "LIVE"
         assert len(result["rounds"]) == 2
         first, changed = [row["audit"] for row in result["rounds"]]

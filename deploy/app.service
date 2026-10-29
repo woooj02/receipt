@@ -11,7 +11,7 @@ EnvironmentFile=-__REMOTE__/.env
 ExecStart=__REMOTE__/venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port __PORT__ --workers 1
 Restart=always
 RestartSec=2
-# Shared box: Shayaak, keepsrunning and the research jobs live here too.
+# Bound resource use on the shared host.
 MemoryMax=512M
 CPUQuota=100%
 Nice=5

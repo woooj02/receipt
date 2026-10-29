@@ -47,9 +47,37 @@ Verified-only requires a baseline and therefore holds results when it is absent.
 
 ## Agent sources
 
-- qloo: actual city discovery plus explicit proposal/revision rules; no LLM.
+- qloo: highest returned business ratings in the comparison pool plus explicit
+  revision rules; no LLM and no claim that ratings measure popularity.
   It follows city/category/radius, does not interpret free-text task notes, and
   rechecks any changed list with the same evaluator.
+
+## Audit changes — v0.5.0, October 29
+
+- Fixed the agent view hiding tastes instead of proposed places. Browser checks
+  now assert editable tastes and hide the irrelevant synthetic-source checkbox.
+- Added validated Qloo images, addresses, venue metadata and per-input contribution
+  scores. Only HTTPS images.qloo.com image URLs are accepted; missing images degrade.
+- Added one-click revision retaining supported picks, per-round ranks/statuses,
+  visual receipts, a hero live example and stacked profile bars.
+- Added separately named Panel lift: personal percentile minus the mean percentile
+  of three equally weighted, declared music profiles, over identical IDs/filters.
+  All three need complete scores. The curated panel is not population popularity.
+- Panel version contrasting-music-v1 was unavailable because Bad Bunny did not
+  resolve uniquely. Version v2 substitutes uniquely resolved J Balvin, based on
+  resolution availability. Membership was frozen before scoring that version.
+- v2 members: Taylor Swift + Beyoncé; Metallica + Iron Maiden; J Balvin + Shakira.
+- Distinctive taste requires P60 fit and +10 panel points. An actual Kendrick +
+  Everything Everywhere run had one of three generic ratings picks pass; two
+  cleared fit but failed this panel bar. A genuine rules revision kept Guard and
+  Grace, added Jelly Cafe/Linger and had three of three pass. No failure was planted.
+- Actual local Chrome checks pass all three live workspaces at 1440px/390px,
+  including one-click preservation, complete panel evidence, images/contributions,
+  a two-round rules loop and confirmation/download. These are specific test cases.
+- 106 offline tests and the synthetic browser regression pass. Four actual
+  ratings-agent first drafts were captured privately; they are not LLM outputs.
+- Internal audit/planning documents are now local-only and removed from reachable
+  public branch history. Starter tools/replay/page/playbook leftovers were removed.
 - scripted: synthetic catalog and deterministic workflow example.
 - live: optional model adapter; requires a separate key, model and spending permission.
 

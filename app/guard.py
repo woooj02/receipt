@@ -36,7 +36,7 @@ def reserve_provider(kind):
     with _LOCK:
         key = (day, kind)
         if _USAGE.get(key, 0) >= limit:
-            raise CapacityError("The demo's daily provider-call allowance has been reached.")
+            raise CapacityError("The demo's daily provider-call allowance has been reached. Please use Load synthetic sample to explore the labelled offline workflow, or return after the allowance resets.")
         _USAGE[key] = _USAGE.get(key, 0) + 1
         for old in list(_USAGE):
             if old[0] != day:

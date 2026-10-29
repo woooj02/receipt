@@ -8,7 +8,7 @@ from app.qloo import CACHE
 def clear_runtime_state(monkeypatch):
     for name in ("QLOO_API_KEY", "QLOO_BASELINE_VERIFIED", "OPENAI_API_KEY",
                  "RECEIPT_ALLOW_LLM_CALLS", "RECEIPT_LLM_MODEL",
-                 "RECEIPT_LLM_DAILY_CALLS", "RECEIPT_QLOO_DAILY_CALLS"):
+                 "RECEIPT_LLM_DAILY_CALLS", "RECEIPT_QLOO_DAILY_CALLS", "RECEIPT_REFERENCE_PANEL"):
         monkeypatch.delenv(name, raising=False)
     reset_limits()
     CACHE.clear()

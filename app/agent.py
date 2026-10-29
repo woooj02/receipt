@@ -61,8 +61,8 @@ class ScriptedAgent:
 
 class QlooDiscoveryAgent:
     """A real-data agent with explicit, inspectable proposal/revision rules."""
-    label = "LIVE QLOO — rules-based, no LLM"
-    model = "qloo-discovery-rules-v1"
+    label = "LIVE QLOO — generic ratings agent; rules-based, no LLM"
+    model = "generic-ratings-rules-v2"
 
     def __init__(self):
         self.client = QlooClient()
@@ -75,12 +75,17 @@ class QlooDiscoveryAgent:
         if scope.category != "any" or scope.venue:
             self.client.configure_scope(scope)
         places = self.client.city_reference_places(brief["city"])
-        choices = [place.name for place in places if assess(
-            place, scope, getattr(self.client, "restaurant_tag", None))[0] == "eligible"][:3]
+        eligible = [place for place in places if assess(
+            place, scope, getattr(self.client, "restaurant_tag", None))[0] == "eligible"]
+        # No taste scores or audit outcomes influence the first draft. Ties use
+        # the original discovery order; missing ratings retain that order too.
+        choices = [place.name for place in sorted(eligible,
+                   key=lambda place: place.business_rating if place.business_rating is not None else -1,
+                   reverse=True)[:3]]
         if not choices:
             raise AgentError("Qloo discovery returned no verifiable places within the explicit constraints.")
         return Proposal(recommendations=choices,
-                        note="Initial draft uses taste-independent city discovery and the explicit category/radius. Free-text task notes are not interpreted; no LLM generated this list.")
+                        note="Generic baseline: highest returned business ratings within the city comparison pool, without personal tastes. These ratings are not popularity. Explicit category/radius applies; no LLM or free-text interpretation.")
 
     def revise(self, brief, previous, critique, allowed):
         retained = [row["name"] for row in critique["candidates"] if row["status"] == "supported"]

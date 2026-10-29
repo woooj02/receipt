@@ -22,11 +22,13 @@ class Policy:
     minimum_personal_percentile: float
     minimum_taste_lift: float
     require_city_baseline: bool
+    minimum_panel_lift: float | None = None
 
 
 POLICIES = {
     "standard": Policy("Standard", 0.60, 0.10, False),
     "verified_only": Policy("Verified-only", 0.70, 0.15, True),
+    "personalized": Policy("Distinctive taste", 0.60, 0.10, False, 0.10),
 }
 MIN_UNIVERSE_SIZE = 10
 
@@ -110,20 +112,27 @@ def decide(
     personal_percentile: float | None,
     city_percentile: float | None,
     policy: Policy,
+    panel_percentile: float | None = None,
 ) -> Decision:
     """Classify one proposed place without turning missing evidence into zero."""
     if personal_percentile is None:
         return Decision("unverified", None, city_percentile, None, "Receipt could not score this exact place in the fixed universe.")
     if policy.require_city_baseline and city_percentile is None:
         return Decision("unverified", personal_percentile, None, None, "Verified-only requires a valid city baseline for this place.")
+    if policy.minimum_panel_lift is not None and panel_percentile is None:
+        return Decision("unverified", personal_percentile, city_percentile, None, "Distinctive taste requires complete evidence for the declared reference panel.")
     taste_lift = None if city_percentile is None else personal_percentile - city_percentile
     if personal_percentile < policy.minimum_personal_percentile:
         return Decision("mismatch", personal_percentile, city_percentile, taste_lift, "Its personalized rank is below this policy’s cultural-fit bar.")
+    if policy.minimum_panel_lift is not None:
+        if personal_percentile - panel_percentile + 1e-12 < policy.minimum_panel_lift:
+            return Decision("shared_taste", personal_percentile, city_percentile, taste_lift, "It fits, but its rank is not sufficiently above the declared music panel under this strictness setting.")
+        return Decision("supported", personal_percentile, city_percentile, taste_lift, "It clears both the taste-match bar and the declared reference-panel lift bar.")
     if city_percentile is None:
         return Decision("supported", personal_percentile, None, None, "It clears the personalized cultural-fit bar; city baseline was unavailable.")
 
     assert taste_lift is not None
-    if taste_lift < policy.minimum_taste_lift:
+    if taste_lift + 1e-12 < policy.minimum_taste_lift:
         return Decision("generic", personal_percentile, city_percentile, taste_lift, "It clears the fit bar but has insufficient measured rank lift. This alone does not establish that it is a bad recommendation.")
     return Decision("supported", personal_percentile, city_percentile, taste_lift, "It clears both personalized-fit and Taste Lift bars.")
 
@@ -155,17 +164,3 @@ def sensitivity(runs: Iterable[CapturedAgentRun]) -> float | None:
         union = left.recommendations | right.recommendations
         distances.append(0.0 if not union else 1 - len(left.recommendations & right.recommendations) / len(union))
     return sum(distances) / len(distances)
-
-
-def rates(decisions: Iterable[Decision]) -> dict[str, float | int]:
-    """Return transparent category rates for a batch of Receipt decisions."""
-    items = list(decisions)
-    total = len(items)
-    if not total:
-        return {"count": 0, "generic_rate": 0.0, "mismatch_rate": 0.0, "unverified_rate": 0.0}
-    return {
-        "count": total,
-        "generic_rate": sum(item.status == "generic" for item in items) / total,
-        "mismatch_rate": sum(item.status == "mismatch" for item in items) / total,
-        "unverified_rate": sum(item.status == "unverified" for item in items) / total,
-    }

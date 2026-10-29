@@ -17,11 +17,13 @@ use this workbench or API; its customers could see a receipt inside the existing
    Once, and a five-kilometre radius around Mission Ballroom.
 2. Wait for the progress steps. The result must say **QLOO LIVE**. Inspect the
    comparison coverage, each place's fit, distance, and omitted-taste explanation.
-3. Inspect **Suggested alternatives**. These suggestions have not passed a
-   new audit. Copy two names, click **Start re-audit**, and replace the place list.
+3. Click **Apply suggestions & re-audit** to keep supported picks and test
+   replacements. Use **Edit revised list** for manual changes. Suggestions do
+   not count as passed until the new audit completes.
 4. Run the changed list. Tastes, policy and comparison set stay frozen. If every
    submitted place clears the recorded policy, click **Confirm reviewed result**.
-5. Expand or download the JSON receipt. It records the exact evidence snapshot;
+5. Review the visual receipt with place photos and addresses, then expand or
+   download its JSON. It records the exact evidence snapshot;
    it does not authenticate the reviewer's identity or guarantee enjoyment.
 
 Actual provider data can change. A hold is a valid result; do not expect every
@@ -30,7 +32,8 @@ place or ambiguous taste name to pass. Missing evidence remains visible.
 ## Watch the agent
 
 Open **Watch an agent revise**, choose the live Qloo rules agent and run the
-live example. It proposes from real city discovery, reads the critique and can
+live example. It starts with the highest business ratings in the comparison pool,
+without using tastes, then reads the critique and can
 revise for up to three rounds. It stops immediately if its first draft passes.
 This mode uses explicit rules, not an LLM; free-text task notes are informational.
 It never confirms its own result.
@@ -46,9 +49,15 @@ The app does not independently verify who generated imported captures.
 
 ## Read the limits
 
-The current live Qloo no-interest response has no affinity values. **Taste Lift
-and generic rate are unavailable**, rather than zero. Standard checks personal
-fit alone; Verified-only holds without a baseline. Hours, prices, reservations,
+The live example selects **Distinctive taste**: rank ≥ P60 and lift ≥ +10 points
+versus a declared three-profile music panel. Open **How the reference panel works**
+to inspect its version and members. The panel is not a representative crowd.
+**Taste match** checks fit alone. These thresholds are prototype settings.
+
+The current live Qloo no-interest response has no affinity values. Original
+**city-only Taste Lift and generic rate are unavailable**, rather than zero.
+Panel lift is a separate metric; Verified-only still requires the original baseline.
+Hours, prices, reservations,
 safety, accessibility and road travel time are not checked.
 
 The synthetic sample remains available if a live run hits a provider or demo

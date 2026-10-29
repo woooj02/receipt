@@ -24,13 +24,13 @@ from .runtime import WorkTimeout, work_budget
 from .scope import Scope, Venue
 
 WEB = Path(__file__).resolve().parent.parent / "web"
-app = FastAPI(title="Receipt", description="Cultural quality checks for recommendation agents.", version="0.4.0")
+app = FastAPI(title="Receipt", description="Cultural quality checks for recommendation agents.", version="0.5.0")
 app.mount("/static", StaticFiles(directory=WEB), name="static")
 app.add_middleware(RequestGuard)
 
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 City = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=100)]
-PolicyID = Literal["standard", "verified_only"]
+PolicyID = Literal["standard", "verified_only", "personalized"]
 
 
 class InputModel(BaseModel):
@@ -149,7 +149,7 @@ async def browser_session(request: Request, call_next):
         response.headers["Cache-Control"] = "no-store"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "no-referrer"
-    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://images.qloo.com; base-uri 'none'; frame-ancestors 'none'"
     return response
 
 

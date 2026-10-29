@@ -105,6 +105,7 @@ def approve(audit_id, *, owner="local", review_token=None, fingerprint=None):
                 "comparison_fingerprint": result["comparison_fingerprint"],
                 "re_audit_of": result["re_audit_of"],
                 "constraints": result["constraints"],
+                "reference_panel": result["reference_panel"],
             }
         return deepcopy(entry["issued"])
 
@@ -120,13 +121,17 @@ def _evaluate(context, anchors, candidates, policy_id):
              {"step": "Freeze comparison set", "state": "complete",
               "detail": f"{len(context.ids)} places; the same set is used for every profile and revision."}]
     progress("Scoring the frozen comparison set")
-    scored = score_map(client.score_places(sorted(distinct), context.ids, context.city), context.ids) if anchor_complete and context.ids else dict.fromkeys(context.ids)
+    scored_rows = client.score_places(sorted(distinct), context.ids, context.city) if anchor_complete and context.ids else []
+    scored = score_map(scored_rows, context.ids)
+    scored_entities = {row.entity_id: row for row in scored_rows}
     personal = complete_percentiles(scored)
     ranks_available = any(value is not None for value in personal.values())
     trace.append({"step": "Score comparison set", "state": "complete" if ranks_available else "unavailable",
                   "detail": f"{sum(value is not None for value in scored.values())}/{len(context.ids)} scores. All comparison places must be scored before ranks are reported."})
     trace.append({"step": "City baseline", "state": "complete" if any(value is not None for value in context.baseline.values()) else "unavailable",
                   "detail": context.baseline_reason})
+    trace.append({"step": "Declared reference panel", "state": "complete" if context.panel_metadata.get("available") else "unavailable",
+                  "detail": context.panel_metadata.get("reason", "Panel unavailable.")})
     selected_policy = POLICIES[policy_id]
     ablations = {}
     if ranks_available:
@@ -147,13 +152,21 @@ def _evaluate(context, anchors, candidates, policy_id):
         entity_id = entity.entity_id if entity else None
         eligibility, constraint_reason, measured_distance = context.eligibility(entity)
         decision = decide(personal_percentile=personal.get(entity_id),
-                          city_percentile=context.baseline.get(entity_id), policy=selected_policy)
+                          city_percentile=context.baseline.get(entity_id), policy=selected_policy,
+                          panel_percentile=context.panel.get(entity_id))
+        details = scored_entities.get(entity_id) or entity
+        panel_percentile = context.panel.get(entity_id)
+        panel_lift = personal[entity_id] - panel_percentile if personal.get(entity_id) is not None and panel_percentile is not None else None
         row = {"name": name, "resolved_name": entity.name if entity else None, "entity_id": entity_id,
-               **asdict(decision), "affinity": scored.get(entity_id), "anchor_removals": []}
+               **asdict(decision), "affinity": scored.get(entity_id), "anchor_removals": [],
+               "panel_percentile": panel_percentile, "panel_lift": panel_lift,
+               "place": {key: getattr(details, key, None) for key in ("address", "image_url", "business_rating", "price_level", "keywords")},
+               "qloo_contributions": [{"anchor": anchor_names[anchor_id], "score": score}
+                                      for anchor_id, score in getattr(details, "contributions", ()) if anchor_id in anchor_names]}
         row.update(constraints_status=eligibility, distance_m=measured_distance)
         if eligibility != "eligible":
             row.update(status=eligibility, reason=constraint_reason, personal_percentile=None,
-                       city_percentile=None, taste_lift=None)
+                       city_percentile=None, taste_lift=None, panel_percentile=None, panel_lift=None)
         elif entity_id not in personal:
             row["reason"] = ("This place is outside the frozen comparison set. Start a new audit to test it."
                              if entity else "Qloo could not uniquely verify this name in the requested city.")
@@ -170,16 +183,14 @@ def _evaluate(context, anchors, candidates, policy_id):
     candidate_ids = {row["entity_id"] for row in output}
     for entity in sorted(context.universe, key=lambda item: personal.get(item.entity_id) or 0, reverse=True):
         decision = decide(personal_percentile=personal.get(entity.entity_id),
-                          city_percentile=context.baseline.get(entity.entity_id), policy=selected_policy)
+                          city_percentile=context.baseline.get(entity.entity_id), policy=selected_policy,
+                          panel_percentile=context.panel.get(entity.entity_id))
         if entity.entity_id not in candidate_ids and decision.status == "supported":
             suggestions.append({"name": entity.name, "entity_id": entity.entity_id,
                                 "reason": "Suggested from this comparison set; the source agent must resubmit its choice.",
                                 "approval_status": "suggested"})
         if len(suggestions) == 3:
             break
-    # Broad graph tags describe related entities, not necessarily this person.
-    # Declared anchors and measured omission tests are the explanation evidence.
-    tags = []  # Retained as an empty compatibility field.
     mode = context.mode
     if mode == "DEMO":
         for step in trace:
@@ -192,7 +203,8 @@ def _evaluate(context, anchors, candidates, policy_id):
                      "resolved_name": entity.name if entity else None,
                      "resolution": "resolved" if entity else "unverified"}
                     for name, entity in zip(anchors, resolved_anchors)],
-        "candidates": output, "repairs": suggestions, "tags": tags, "trace": trace,
+        "candidates": output, "repairs": suggestions, "trace": trace,
+        "reference_panel": context.panel_metadata,
         "fixed_universe_count": len(context.ids), "comparison_fingerprint": context.fingerprint,
         "scoring_coverage": {"scored": sum(value is not None for value in scored.values()),
                              "required": len(context.ids), "complete": ranks_available},
@@ -200,6 +212,8 @@ def _evaluate(context, anchors, candidates, policy_id):
         "limitations": [
             "Ranks are relative to this comparison set; they do not establish an individual's enjoyment.",
             "Receipt's thresholds are prototype policy. Generic means insufficient measured rank lift.",
+            "Panel lift compares three declared, equally weighted music profiles. It is not population popularity or the unavailable city-only Taste Lift.",
+            "Qloo contributions are provider-reported normalized influence, not causal explanations or probabilities of enjoyment.",
             "Restaurant and radius checks use returned tags and coordinates; missing metadata stays unverified.",
             "Distance is straight-line distance from the supplied point, not walking or driving time.",
             "Hours, prices, accessibility, safety and availability are not verified.",
@@ -215,7 +229,7 @@ def _verdict(result):
         return {"title": "Ready for review", "detail": "Every submitted place clears the recorded policy."}
     if any(row["status"] == "unverified" for row in result["candidates"]):
         return {"title": "Evidence incomplete", "detail": "Every proposed place remains visible, including unverified picks."}
-    return {"title": "Revision needed", "detail": "The policy flagged a mismatch or insufficient taste lift."}
+    return {"title": "Revision needed", "detail": "Some picks need a better taste match or more distinction under this setting."}
 
 
 def _validate(anchors, candidates, city, policy):

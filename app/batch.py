@@ -51,12 +51,18 @@ def run_test_suite(*, agent, city, profiles, force_demo, policy="standard", scop
         "source": audits[0]["source"], "profile_count": len(profiles), "policy": policy,
         "fixed_universe_count": len(comparison.ids), "comparison_fingerprint": comparison.fingerprint,
         "constraints": comparison.scope.public(),
+        "reference_panel": comparison.panel_metadata,
         "unique_taste_profile_count": len({tuple(sorted(map(normalize_name, profile["anchors"]))) for profile in profiles}),
         "metrics": {
             "sensitivity": sensitivity(captured),
             "sensitivity_definition": "Mean pairwise Jaccard distance of normalized supplied place names. Measures output variation, not quality.",
             "generic_rate": generic / total if total and has_baseline else None,
             "generic_rate_available": has_baseline,
+            "low_panel_lift_rate": sum(row["personal_percentile"] is not None and row["personal_percentile"] >= .60
+                                        and row["panel_lift"] is not None and row["panel_lift"] < .10
+                                        for row in candidates) / total if comparison.panel_metadata.get("available") else None,
+            "panel_scored_count": sum(row["panel_lift"] is not None for row in candidates),
+            "panel_definition": "Share of all picks with fit >= P60 and lift below +10 points versus the declared three-profile music panel; not a population generic rate.",
             "generic_count": generic if has_baseline else None,
             "generic_definition": "Share of all submitted picks that clear the personalized-fit bar but fail the policy's rank-lift bar. Missing evidence is counted separately.",
             "baseline_eligible_count": baseline_eligible,

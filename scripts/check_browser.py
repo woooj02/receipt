@@ -112,13 +112,24 @@ def run(screenshots=False):
                     until(lambda: evaluate("document.getElementById('error').classList.contains('visible')"))
                     assert evaluate("!document.getElementById('approval').classList.contains('visible')")
                     print(f"PASS {width}px: audit → revision → confirmation → changed-input invalidation → failed-request recovery")
-                    evaluate("document.getElementById('tabAgent').click(); document.getElementById('loadSample').click()")
+                    evaluate("document.getElementById('loadSample').click()")
+                    until(lambda: evaluate("!document.getElementById('auditButton').disabled && current && !current.approval_eligible"))
+                    original_set = evaluate("current.comparison_fingerprint")
+                    evaluate("document.getElementById('applySuggestions').click()")
+                    until(lambda: evaluate("!document.getElementById('auditButton').disabled && current && current.approval_eligible"))
+                    assert evaluate("current.input_candidates.includes('Harbor Street Grill')"), "One-click revision must retain supported picks"
+                    assert evaluate("current.comparison_fingerprint") == original_set
+                    evaluate("document.getElementById('tabAgent').click()")
+                    assert evaluate("document.getElementById('anchors').getClientRects().length > 0"), "Tastes must be visible and editable in agent view"
+                    assert evaluate("document.getElementById('candidateField').hidden && document.getElementById('demoChoice').hidden")
+                    evaluate("document.getElementById('loadSample').click()")
                     until(lambda: evaluate("document.querySelectorAll('#agentTimeline .round-card').length === 2 && !document.getElementById('auditButton').disabled"))
                     assert evaluate("document.getElementById('agentTimeline').textContent.includes('SCRIPTED DEMO')")
                     assert evaluate("document.getElementById('approval').classList.contains('visible') && !document.getElementById('issued').classList.contains('visible')")
                     assert evaluate("document.documentElement.scrollWidth <= window.innerWidth")
                     if previews:
                         evaluate("document.getElementById('agentTimeline').scrollIntoView({block:'start'})")
+                        time.sleep(.6)
                         shot = command("Page.captureScreenshot", {"format": "png", "captureBeyondViewport": False})
                         (previews / f"agent-{width}.png").write_bytes(base64.b64decode(shot["data"]))
                     print(f"PASS {width}px: scripted agent → critique → revised audit → explicit review")
