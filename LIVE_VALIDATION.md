@@ -1,6 +1,6 @@
 # Receipt — live validation
 
-Checked October 28, 2026, Denver time (October 29 UTC). No paid model calls were made.
+Checked October 28–29, 2026, Denver time. No paid model calls were made.
 
 ## Verified against the actual Qloo service
 
@@ -53,9 +53,30 @@ Verified-only requires a baseline and therefore holds results when it is absent.
 - scripted: synthetic catalog and deterministic workflow example.
 - live: optional model adapter; requires a separate key, model and spending permission.
 
-## Remaining evidence and release work
+## Public release verification — October 29
+
+- Approved deployment: https://receipt.91.99.162.43.sslip.io/.
+- Public source: https://github.com/woooj02/receipt; anonymous access and GitHub's
+  MIT licence detection pass. The repository About section links the live app.
+- Native ARM64 Python service runs behind nginx with a valid HTTPS certificate.
+  Only the supplied Qloo key was configured; .env is owner-only and not served.
+  Model permission and model-call allowance are both zero.
+- Hosted Chrome checks pass at 1440px and 390px: audit, frozen revision,
+  exact-snapshot confirmation/download, rules-agent and four-capture batch.
+  HTTPS session cookies are Secure, HttpOnly and SameSite=Strict.
+- Direct TLS from the laptop failed; browser checks used an SSH SOCKS proxy with
+  certificate verification enabled. This was not used as proof of public access.
+- A separate GitHub-hosted Ubuntu runner then reached the app over public HTTPS
+  without credentials or that proxy. It passed health, private-path denials, live
+  audit, frozen revision, confirmation, rules-agent and two-profile batch checks.
+- That runner installed a fresh public checkout, passed pip check and all 92
+  offline tests. [Reproducible release run](https://github.com/woooj02/receipt/actions/runs/40829311653).
+- The hosted input lists were constructed validation cases, not model captures.
+  The check logs expose pass/count summaries, not raw provider responses or tokens.
+
+## Remaining evidence and submission work
 
 A real LLM capture study and preference/customer validation are not completed.
-No external deployment, public repository or final submission is claimed.
+Final Devpost submission has not been performed and needs separate approval.
 Docker image build verification remains unavailable because local socket access is denied.
-The current readiness and approval plan is in submission/release-plan.md.
+The release record and remaining approval are in submission/release-plan.md.

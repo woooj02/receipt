@@ -58,8 +58,8 @@ scope checks, review flow and testing workspaces are the project implementation.
 ## What we verified
 
 Real Qloo audit, venue-radius checks, changed-list audit and receipt confirmation
-work locally. Chrome checks cover desktop and phone layouts, including the
-real-data rules-based agent and imported-list batch workspace.
+work in the hosted HTTPS application. Chrome checks cover desktop and phone
+layouts, including the real-data rules-based agent and imported-list batch workspace.
 Offline regression tests cover missing/ambiguous evidence, fixed comparison sets,
 pagination, revisions, ownership, stale confirmations and provider failures.
 
@@ -85,10 +85,12 @@ Confirmation records an action and evidence snapshot; reviewer identity is not v
 Validate useful choices with people and a real agent-output study, calibrate
 policy thresholds, and test an integration with a specific concierge team.
 
-## Submission fields still requiring approved release
+## Submission links
 
-- Hosted application URL: pending deployment and external verification.
-- Public repository URL: proposed github.com/woooj02/receipt; not yet created or published.
-- English description: this draft, after matching the final approved build.
+- Hosted application: https://receipt.91.99.162.43.sslip.io/.
+- Public repository: https://github.com/woooj02/receipt.
+- Testing instructions: submission/testing-instructions.md in the repository.
+- English description: this document, matching release v0.4.0.
 - License: MIT.
 - Video: optional; the existing private recording is a labelled synthetic walkthrough.
+- Devpost submission: not yet submitted; final approval is separate.

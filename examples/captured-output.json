@@ -1,0 +1,30 @@
+{
+  "agent_name": "Hand-entered example — not model captures",
+  "agent_version": "example-v1",
+  "prompt_version": "no-prompt-constructed-inputs",
+  "captured_at": "2026-10-29T06:00:00Z",
+  "city": "Denver, Colorado",
+  "policy": "standard",
+  "demo": false,
+  "constraints": {
+    "category": "restaurant",
+    "venue": {
+      "label": "Mission Ballroom",
+      "latitude": 39.776204,
+      "longitude": -104.969168,
+      "radius_m": 5000
+    }
+  },
+  "profiles": [
+    {
+      "profile_id": "mixed-example",
+      "anchors": ["Kendrick Lamar", "Everything Everywhere All at Once"],
+      "recommendations": ["Work & Class", "Tavernetta", "Forest Room 5"]
+    },
+    {
+      "profile_id": "pop-example",
+      "anchors": ["Taylor Swift", "Beyoncé"],
+      "recommendations": ["Work & Class", "Tavernetta", "Forest Room 5"]
+    }
+  ]
+}

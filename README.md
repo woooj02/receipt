@@ -6,9 +6,12 @@ Receipt evaluates proposed places against cultural tastes, explains rank sensiti
 returns a structured critique, and checks the agent's revision. Its test suite
 compares captured recommendations across taste profiles using one frozen universe.
 
-**Status:** real Qloo audits, radius checks, revisions, receipts and rules-based
-agent runs work locally. The city-only affinity baseline is unavailable; Taste
-Lift stays disabled. Optional LLM runs, external hosting and publication are pending.
+**Try it:** [Live application](https://receipt.91.99.162.43.sslip.io/) ·
+[Public MIT source](https://github.com/woooj02/receipt) ·
+[Judge walkthrough](submission/testing-instructions.md).
+Real Qloo audits, revisions, receipts and rules-based agent runs are deployed.
+The city-only affinity baseline is unavailable; Taste Lift stays disabled.
+Optional paid-model runs and a real-model study have not been completed.
 
 For the complete purpose, decisions, formulas, limitations and audit questions,
 read [project.md](project.md).
@@ -93,6 +96,8 @@ timezone-aware captured_at timestamp, city, and 2–20 captures in profiles.
 Each capture has a unique profile_id, anchors, recommendations, and optional
 control_group. Members of a repeat-control group must have identical tastes.
 Capture provenance supplied by a caller is explicitly unverified.
+The [import example](examples/captured-output.json) uses hand-entered validation
+inputs with real Qloo scoring; it is not a captured model response or benchmark.
 
 For long work, POST the same body to /api/jobs/audit, /api/jobs/agent or
 /api/jobs/batch. Poll GET /api/jobs/{job_id}, or POST
@@ -128,6 +133,12 @@ The browser check uses local Chrome/Chromium and an isolated temporary profile.
 It checks all three workspaces at 1440px and 390px and makes no provider calls.
 Add --screenshots to retain local previews in /tmp.
 
+GitHub Actions installs the public source and runs the offline tests. Its manual
+check_deployment option also exercises the hosted HTTPS workflows using constructed
+inputs and real Qloo calls. Run that check only when consuming the app's Qloo
+allowance is intended: python scripts/check_deployment.py --base-url
+https://receipt.91.99.162.43.sslip.io (as one shell line).
+
 ## Runtime and deployment
 
 Two workers, a four-run queue, 180-second budgets, cancellation, a 128-KB body
@@ -140,9 +151,10 @@ Use one server process: audit ownership, confirmation tokens, queues and budgets
 are in memory. Audits expire after 30 minutes. Confirmation records an explicit
 action and evidence hash; reviewer identity is not authenticated.
 
-deploy.sh prepares the existing Hetzner host and checks HTTPS after deployment.
-Dockerfile provides a separate non-root single-worker recipe. No deployment has
-been run. Local Docker socket access was denied, so the image is not build-verified.
+The release uses deploy.sh on the existing Hetzner host: one native Python process,
+systemd and nginx HTTPS. Hosted Chrome workflows pass at 1440px and 390px.
+Dockerfile provides a separate non-root single-worker recipe. Local Docker socket
+access was denied, so the image is not build-verified.
 See [PREKEY_HANDOFF.md](PREKEY_HANDOFF.md) for the live gate and release status.
 
 ## License
