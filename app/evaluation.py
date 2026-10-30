@@ -26,7 +26,7 @@ class Policy:
 
 
 POLICIES = {
-    "standard": Policy("Standard", 0.60, 0.10, False),
+    "standard": Policy("Taste match", 0.60, 0.10, False),
     "verified_only": Policy("Verified-only", 0.70, 0.15, True),
     "personalized": Policy("Distinctive taste", 0.60, 0.10, False, 0.10),
 }

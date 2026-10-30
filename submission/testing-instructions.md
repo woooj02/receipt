@@ -42,7 +42,7 @@ It never confirms its own result.
 
 Open **Test an agent**. The 20-capture sample is explicitly **DEMO — SYNTHETIC**.
 It demonstrates report mechanics, not a real-model benchmark. To audit real
-outputs, import JSON matching [the captured-output format](../examples/captured-output.json).
+outputs, import JSON matching [the captured-output format](https://github.com/woooj02/receipt/blob/master/examples/captured-output.json).
 That file contains hand-entered inputs for a live Qloo report; it is not model
 output. Replace its lists and metadata with genuine captures for an actual study.
 The app does not independently verify who generated imported captures.
@@ -54,9 +54,9 @@ choices with media type and year. Select one to continue. Informal `&`/`and`
 spellings work; ambiguous place locations still need a narrower venue scope.
 A notice explains when your tastes overlap the fixed reference panel.
 
-For a real AI tool flow, [connect your local Claude client](../docs/mcp.md).
+For a real AI tool flow, [connect your local Claude client](https://github.com/woooj02/receipt/blob/master/docs/mcp.md).
 The existing client provides model access; Receipt supplies live Qloo checks.
-The [ten-profile ratings-agent report](../docs/ratings-study.md) includes all
+The [ten-profile ratings-agent report](https://github.com/woooj02/receipt/blob/master/docs/ratings-study.md) includes all
 outcomes and the incomplete profile, rather than treating missing evidence as a pass.
 
 The live example selects **Distinctive taste**: rank ≥ P60 and lift ≥ +10 points
@@ -72,4 +72,4 @@ safety, accessibility and road travel time are not checked.
 
 The synthetic sample remains available if a live run hits a provider or demo
 limit. It is labelled separately and never substituted for a failed live run.
-Actual release checks are in [LIVE_VALIDATION.md](../LIVE_VALIDATION.md).
+Actual release checks are in [LIVE_VALIDATION.md](https://github.com/woooj02/receipt/blob/master/LIVE_VALIDATION.md).

@@ -301,6 +301,7 @@ $("approve").onclick = async () => {
       '<p>' + esc(anchorNote(item.anchor_removals)) + '</p></article>').join("");
     $("receiptCode").textContent = JSON.stringify(issuedReceipt, null, 2);
     $("issued").classList.add("visible");
+    $("approval").classList.remove("visible");
     $("issued").scrollIntoView({behavior:"smooth", block:"nearest"});
   } catch (error) { showError(error.message); }
   finally { setBusy(false); }
@@ -455,8 +456,8 @@ function renderBatch(data) {
       return '<div class="profile-bar"><span>' + esc(profile.profile_id) + '</span><div class="bar-track" role="img" aria-label="' +
         esc(groups.map(([s,label]) => label + ': ' + profile.candidates.filter((x) => x.status === s).length).join(', ')) + '">' +
         groups.map(([s,label]) => { const count = profile.candidates.filter((x) => x.status === s).length; return count ? '<span class="bar-' + s + '" style="width:' + (100*count/total) + '%" title="' + esc(label) + ': ' + count + '">' + count + '</span>' : ''; }).join('') + '</div></div>';
-    }).join('') + '<p class="micro">Green: supported · Amber: shared/generic · Red: mismatch · Grey: unverified/outside constraints</p></div>' +
-    '<div class="report-table"><table><thead><tr><th>Captured profile</th><th>Supported</th><th>Shared with panel</th><th>Generic</th><th>Mismatch</th><th>Unverified / ineligible</th><th>Coverage</th></tr></thead><tbody>' + rows +
+    }).join('') + '<p class="micro">Green: great taste match · Amber: good fit, but not distinctive / low city lift · Red: weak taste match · Grey: couldn’t verify / outside requirements</p></div>' +
+    '<div class="report-table"><table><thead><tr><th>Captured profile</th><th>Great taste match</th><th>Good fit, but not distinctive</th><th>Low city lift</th><th>Weak match</th><th>Couldn’t verify / outside requirements</th><th>Coverage</th></tr></thead><tbody>' + rows +
     '</tbody></table></div><details class="limits"><summary>Reference panel and definitions</summary><p>' +
     esc(data.reference_panel?.definition || 'Panel unavailable for this source.') + '</p><p>' +
     esc((data.reference_panel?.profiles || []).map((p) => p.label + ': ' + p.anchors.join(' + ')).join('; ')) +
@@ -472,7 +473,7 @@ function anchorNote(effects) {
     ? "Removing " + strongest.anchor + " lowered this rank the most (" + Math.round(strongest.rank_drop * 100) + " points)."
     : "No single anchor removal lowered this rank in the tested set.";
 }
-function statusLabel(value) { return ({supported:'Fits the selected standard', shared_taste:'Good fit, but not distinctive', unverified:'Couldn’t verify', mismatch:'Weak taste match', generic:'No measured taste lift', ineligible:'Outside your requirements'})[value] || value; }
+function statusLabel(value) { return ({supported:'Great taste match', shared_taste:'Good fit, but not distinctive', unverified:'Couldn’t verify', mismatch:'Weak taste match', generic:'No measured taste lift', ineligible:'Outside your requirements'})[value] || value; }
 function placeDetails(item) {
   const place = item.place || {};
   const contribution = (item.qloo_contributions || []).map((x) => x.anchor + ' ' + Math.round(x.score * 100) + '%').join(' · ');

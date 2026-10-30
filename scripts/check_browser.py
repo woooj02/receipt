@@ -94,6 +94,7 @@ def run(screenshots=False):
                     evaluate("document.getElementById('loadSample').click()")
                     until(lambda: evaluate("document.querySelectorAll('.candidate').length === 3 && !document.getElementById('auditButton').disabled"))
                     assert evaluate("document.getElementById('resultMode').textContent") == "DEMO — SYNTHETIC"
+                    assert evaluate("current.policy.name === document.getElementById('policy').selectedOptions[0].textContent")
                     assert evaluate("document.getElementById('candidateList').textContent.includes('Weak taste match')")
                     assert evaluate("!document.getElementById('approval').classList.contains('visible')")
                     assert evaluate("document.documentElement.scrollWidth <= window.innerWidth"), "Horizontal overflow in result"
@@ -104,6 +105,8 @@ def run(screenshots=False):
                     evaluate("document.getElementById('approve').click()")
                     until(lambda: evaluate("document.getElementById('issued').classList.contains('visible')"))
                     assert evaluate("JSON.parse(document.getElementById('receiptCode').textContent).approval_recorded")
+                    assert evaluate("!document.getElementById('approval').classList.contains('visible')"), "Confirmation card remained visible after issuing receipt"
+                    assert evaluate("JSON.parse(document.getElementById('receiptCode').textContent).policy.name === document.getElementById('policy').selectedOptions[0].textContent")
                     evaluate("const broken = document.createElement('img'); broken.className='place-image audit-broken-image'; broken.src='/static/missing-audit-image.png'; document.getElementById('receiptPreview').appendChild(broken)")
                     until(lambda: evaluate("!document.querySelector('#receiptPreview .audit-broken-image')"))
                     assert evaluate("document.documentElement.scrollWidth <= window.innerWidth"), "Horizontal overflow in receipt"
