@@ -1,0 +1,15 @@
+[Unit]
+Description=Warm Receipt's live example before judging
+After=network-online.target hack-receipt.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/root/hack/receipt
+ExecStart=/root/hack/receipt/venv/bin/python /root/hack/receipt/scripts/warm_demo.py
+TimeoutStartSec=210
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only

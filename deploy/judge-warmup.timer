@@ -1,0 +1,12 @@
+[Unit]
+Description=Receipt one-time cache warm-up for November 2 judging
+
+[Timer]
+# Judging begins November 2 at noon EST / 17:00 UTC / 10:00 MST.
+OnCalendar=2026-11-02 16:59:00 UTC
+AccuracySec=1s
+Persistent=true
+Unit=hack-receipt-judge-warmup.service
+
+[Install]
+WantedBy=timers.target

@@ -155,6 +155,11 @@ five-minute cache and per-process provider ceilings bound the demo. Ceilings res
 on restart and are not persistent billing caps. Exhaustion points to the labelled
 synthetic sample. Review confirmation does not authenticate reviewer identity.
 
+`scripts/warm_demo.py` warms the live example through the existing bounded API;
+it needs no key of its own and never confirms a result. The optional timer in
+`deploy/judge-warmup.timer` schedules one run for November 2 at 16:59 UTC,
+one minute before judging starts. The cache still expires after five minutes.
+
 Native hosting uses systemd/nginx HTTPS through deploy.sh. The separate non-root
 Docker recipe is not build-verified. Internal planning and audit documents, keys,
 private provider reports and recording assets stay out of Git and deployment.
