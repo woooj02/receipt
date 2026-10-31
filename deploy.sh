@@ -52,6 +52,12 @@ rsync -az --delete -e "ssh -i $KEY" \
   --exclude 'submission/video/' --exclude 'submission/VOICEOVER.md' \
   --exclude project.md --exclude PROJECT_AUDIT.md --exclude PREKEY_HANDOFF.md \
   --exclude REVIEW_FIXES.md --exclude prd.md --exclude spec.md --exclude scope.md \
+  --exclude NOTES.md --exclude AGENTS.md --exclude CLAUDE.md \
+  --exclude '.claude/' --exclude '.codex/' --exclude '.agents/' \
+  --exclude '[Pp][Rr][Oo][Jj][Ee][Cc][Tt].[Mm][Dd]' \
+  --exclude '[Pp][Rr][Oo][Jj][Ee][Cc].[Mm][Dd]' \
+  --exclude '*[Dd][Ii][Aa][Ll][Oo][Gg]*.[Mm][Dd]' \
+  --exclude '*[Vv][Oo][Ii][Cc][Ee][Oo][Vv][Ee][Rr]*.[Mm][Dd]' \
   --exclude submission/release-plan.md ./ "$SERVER:$REMOTE/"
 if [ "${1:-}" = "--env" ] && [ -f .env ]; then
   scp -q -i "$KEY" .env "$SERVER:$REMOTE/.env"

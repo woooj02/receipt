@@ -96,6 +96,6 @@ A receipt records an action and evidence hash; it does not authenticate identity
 ## Try it
 
 - App: https://receipt.91.99.162.43.sslip.io/.
+- Demo video: https://youtu.be/h0lgcsNLXpg.
 - Public MIT source: https://github.com/woooj02/receipt.
 - Walkthrough: https://github.com/woooj02/receipt/blob/master/submission/testing-instructions.md.
-- Final Devpost submission has not been performed.

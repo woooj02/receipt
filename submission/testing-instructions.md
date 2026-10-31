@@ -3,6 +3,8 @@
 Open https://receipt.91.99.162.43.sslip.io/. No account or API key is needed.
 The public demo uses a server-side Qloo key. Model calls are disabled.
 
+[Watch the 2:48 recorded Claude/MCP demonstration](https://youtu.be/h0lgcsNLXpg).
+
 ## One-minute explanation
 
 An AI concierge gives you restaurant names. Receipt checks whether those names

@@ -3,8 +3,13 @@
 **AI concierges know good places. Receipt checks whether they're good for you.**
 
 [Try the live app](https://receipt.91.99.162.43.sslip.io/) ·
+[Watch the 2:48 demo](https://youtu.be/h0lgcsNLXpg) ·
 [Judge walkthrough](submission/testing-instructions.md) ·
 [Live verification](LIVE_VALIDATION.md)
+
+**In the demo:** a real Claude/MCP run moves from **0/3 → 2/3 → 3/3**
+over the same fifty-place comparison. Recorded evidence is labelled;
+the video includes an ElevenLabs AI-narration disclosure.
 
 **Real local study:** the same top-rated shortlist cleared the declared taste
 check on 12 of 30 picks across ten curated profiles.
